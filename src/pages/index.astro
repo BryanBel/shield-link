@@ -1,17 +1,104 @@
 ---
-
+import Layout from '../layouts/Layout.astro';
+// Eliminamos la importación de Supabase y la lógica de servidor del historial
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Shield Link - Análisis de Seguridad">
+    <main>
+        <h1>🛡️ Shield Link</h1>
+        <p>Análisis instantáneo de enlaces sospechosos</p>
+        
+        <div id="inputContainer" class="scanner-card">
+            <input type="text" id="linkInput" placeholder="https://ejemplo-sospechoso.com" />
+            <button id="scanBtn">Analizar Ahora</button>
+        </div>
+
+        <div id="result" class="hidden"></div>
+    </main>
+</Layout>
+
+<script>
+    import { analizarSeguridad } from '../utils/scanner.js';
+
+    const btn = document.getElementById('scanBtn');
+    const input = document.getElementById('linkInput') as HTMLInputElement;
+    const resultDiv = document.getElementById('result');
+    const inputContainer = document.getElementById('inputContainer');
+
+    btn?.addEventListener('click', async () => {
+        const url = input.value.trim();
+        if (!url || !resultDiv || !inputContainer) return;
+
+        // Estado de carga
+        inputContainer.classList.add('hidden');
+        resultDiv.className = "info";
+        resultDiv.innerHTML = `
+            <div class="loader"></div>
+            <p>Consultando base de datos global y motores de seguridad...</p>
+        `;
+        resultDiv.classList.remove('hidden');
+
+        const res = await analizarSeguridad(url);
+
+        // Mostrar veredicto final
+        resultDiv.className = res.seguro ? 'safe' : 'danger';
+        resultDiv.innerHTML = `
+            <div class="verdict-content">
+                <span class="icon">${res.seguro ? '✅' : '❌'}</span>
+                <h2>${res.seguro ? 'Enlace Seguro' : 'Enlace Peligroso'}</h2>
+                <p>${res.motivo}</p>
+                <button id="resetBtn" class="secondary-btn">Escanear otro enlace</button>
+            </div>
+        `;
+
+        // Botón para volver al inicio sin recargar la página
+        document.getElementById('resetBtn')?.addEventListener('click', () => {
+            resultDiv.classList.add('hidden');
+            inputContainer.classList.remove('hidden');
+            input.value = "";
+        });
+    });
+</script>
+
+<style>
+    .hidden { display: none; }
+    
+    .verdict-content { padding: 1rem; }
+    .icon { font-size: 3rem; display: block; margin-bottom: 1rem; }
+    
+    .info { color: #3b82f6; padding: 2rem; }
+    
+    .safe { 
+        border: 2px solid #2ecc71; 
+        background: rgba(46, 204, 113, 0.1); 
+        padding: 2rem; 
+        border-radius: 12px; 
+    }
+    
+    .danger { 
+        border: 2px solid #ff4d4d; 
+        background: rgba(255, 77, 77, 0.1); 
+        padding: 2rem; 
+        border-radius: 12px; 
+    }
+
+    .secondary-btn {
+        margin-top: 1.5rem;
+        background: #334155;
+        font-size: 0.9rem;
+        width: auto;
+        padding: 10px 20px;
+    }
+
+    /* Un toque de animación para el escaneo */
+    .loader {
+        border: 4px solid #334155;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>

@@ -1,0 +1,70 @@
+---
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Shield Link - Detector de Phishing" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>{title}</title>
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--accent: #3b82f6;
+		--bg: #0f172a;
+		--text: #f8fafc;
+	}
+	html {
+		font-family: system-ui, sans-serif;
+		background: var(--bg);
+		color: var(--text);
+	}
+	body {
+		margin: 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 100vh;
+	}
+	main {
+		max-width: 500px;
+		width: 90%;
+		text-align: center;
+		padding: 2rem;
+		background: #1e293b;
+		border-radius: 16px;
+		box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+	}
+	input {
+		width: 100%;
+		padding: 12px;
+		border-radius: 8px;
+		border: 1px solid #334155;
+		background: #0f172a;
+		color: white;
+		margin-bottom: 1rem;
+		box-sizing: border-box;
+	}
+	button {
+		width: 100%;
+		padding: 12px;
+		background: var(--accent);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-weight: bold;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+	button:hover {
+		background: #2563eb;
+	}
+</style>
