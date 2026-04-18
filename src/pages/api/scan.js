@@ -2,7 +2,7 @@ export const POST = async ({ request }) => {
   try {
     const { url } = await request.json();
     // Usamos el nombre que tienes en tu .env
-    const API_KEY = import.meta.env.PHISHTANK_API_KEY; 
+    const API_KEY = import.meta.env.VIRUSTOTAL_API_KEY; 
 
     if (!url) return new Response(JSON.stringify({ error: 'URL requerida' }), { status: 400 });
 

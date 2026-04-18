@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-// Eliminamos la importación de Supabase y la lógica de servidor del historial
 ---
 
 <Layout title="Shield Link - Análisis de Seguridad">
@@ -40,22 +39,41 @@ import Layout from '../layouts/Layout.astro';
 
         const res = await analizarSeguridad(url);
 
-        // Mostrar veredicto final
-        resultDiv.className = res.seguro ? 'safe' : 'danger';
-        resultDiv.innerHTML = `
-            <div class="verdict-content">
-                <span class="icon">${res.seguro ? '✅' : '❌'}</span>
-                <h2>${res.seguro ? 'Enlace Seguro' : 'Enlace Peligroso'}</h2>
-                <p>${res.motivo}</p>
-                <button id="resetBtn" class="secondary-btn">Escanear otro enlace</button>
-            </div>
-        `;
+        // --- LÓGICA DE MOSTRADO SEGÚN EL TIPO DE RESULTADO ---
+        if (res.error) {
+            // Caso 1: Error de formato (Naranja/Aviso)
+            resultDiv.className = "warning";
+            resultDiv.innerHTML = `
+                <div class="verdict-content">
+                    <span class="icon">ℹ️</span>
+                    <h2>Formato Incorrecto</h2>
+                    <p>${res.motivo}</p>
+                    <button id="resetBtn" class="secondary-btn">Corregir enlace</button>
+                </div>
+            `;
+        } else {
+            // Caso 2: Veredicto de seguridad (Verde o Rojo)
+            resultDiv.className = res.seguro ? 'safe' : 'danger';
+            resultDiv.innerHTML = `
+                <div class="verdict-content">
+                    <span class="icon">${res.seguro ? '✅' : '❌'}</span>
+                    <h2>${res.seguro ? 'Enlace Seguro' : 'Enlace Peligroso'}</h2>
+                    <p>${res.motivo}</p>
+                    <button id="resetBtn" class="secondary-btn">Escanear otro enlace</button>
+                </div>
+            `;
+        }
 
-        // Botón para volver al inicio sin recargar la página
+        // Configurar botón de retorno
         document.getElementById('resetBtn')?.addEventListener('click', () => {
             resultDiv.classList.add('hidden');
             inputContainer.classList.remove('hidden');
-            input.value = "";
+            
+            // Si fue error de formato, mantenemos el texto para que el usuario solo lo corrija
+            if (!res.error) {
+                input.value = "";
+            }
+            input.focus();
         });
     });
 </script>
@@ -68,6 +86,15 @@ import Layout from '../layouts/Layout.astro';
     
     .info { color: #3b82f6; padding: 2rem; }
     
+    /* Estilo para Errores de Formato (Naranja) */
+    .warning {
+        border: 2px solid #f39c12;
+        background: rgba(243, 156, 18, 0.1);
+        padding: 2rem;
+        border-radius: 12px;
+        color: #f39c12;
+    }
+
     .safe { 
         border: 2px solid #2ecc71; 
         background: rgba(46, 204, 113, 0.1); 
@@ -85,12 +112,15 @@ import Layout from '../layouts/Layout.astro';
     .secondary-btn {
         margin-top: 1.5rem;
         background: #334155;
+        color: white;
+        border: none;
+        cursor: pointer;
         font-size: 0.9rem;
         width: auto;
         padding: 10px 20px;
+        border-radius: 6px;
     }
 
-    /* Un toque de animación para el escaneo */
     .loader {
         border: 4px solid #334155;
         border-top: 4px solid #3b82f6;

@@ -1,43 +1,66 @@
-# Astro Starter Kit: Minimal
+# 🛡️ Shield Link - Sistema de Análisis de Integridad de URLs
 
-```sh
-pnpm create astro@latest -- --template minimal
+**Shield Link** es una herramienta de ciberseguridad desarrollada con el framework **Astro**, diseñada para proteger a los usuarios mediante el análisis profundo de enlaces sospechosos. El sistema utiliza una arquitectura de inspección en cascada para determinar la seguridad de una URL antes de que el usuario interactúe con ella.
+
+---
+
+## 🚀 Características Principales
+- **Análisis Multi-Capa:** Consulta una base de datos local de reputación, motores globales y reglas heurísticas proactivas.
+- **Seguridad Server-Side:** Integración con la API de VirusTotal protegida mediante *Astro API Routes* (BFF).
+- **Caché de Inteligencia:** Registro automático de amenazas y sitios seguros en Supabase para optimizar tiempos de respuesta y cuotas de API.
+- **Validación Heurística:** Bloqueo preventivo de TLDs de alto riesgo (`.xyz`, `.zip`, `.tk`) y protocolos inseguros.
+
+---
+
+## 🛠️ Stack Tecnológico
+- **Frontend/Backend:** [Astro](https://astro.build/) (v4+) - Renderizado en el servidor (SSR).
+- **Base de Datos:** [Supabase](https://supabase.com/) - PostgreSQL para gestión de listas blancas y negras.
+- **Gestor de Paquetes:** [pnpm](https://pnpm.io/) - Gestión eficiente de dependencias.
+- **API de Seguridad:** [VirusTotal v3 API](https://www.virustotal.com/).
+- **Despliegue:** [Vercel](https://vercel.com/).
+
+---
+
+## 🧠 Arquitectura de Análisis (Flujo en Cascada)
+El sistema opera bajo una estrategia de **Zero Trust**:
+
+1.  **Filtro Heurístico:** Bloqueo inmediato de extensiones maliciosas conocidas.
+2.  **Caché Local (Reputación):** Consulta en Supabase para evitar re-analizar sitios ya verificados en `lista_blanca` o `lista_negra`.
+3.  **Escaneo Global:** Análisis en tiempo real mediante los 70+ motores de VirusTotal.
+4.  **Persistencia:** Almacenamiento automático del veredicto para optimizar futuras consultas.
+
+---
+
+## ⚙️ Configuración y Ejecución Local
+
+### 1. Requisitos Previos
+- **Node.js** (v18.0 o superior)
+- **pnpm** instalado (`npm install -g pnpm`)
+
+### 2. Instalación
+```bash
+git clone [https://github.com/TU_USUARIO/shield-link.git](https://github.com/TU_USUARIO/shield-link.git)
+cd shield-link
+pnpm install 
 ```
+### 3. Configuración de Base de Datos
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Para configurar las tablas y políticas de seguridad (RLS), ejecute el contenido del archivo schema.sql (ubicado en la raíz) en el SQL Editor de su proyecto en Supabase.
 
-## 🚀 Project Structure
+### 4. Variables de Entorno
 
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+Cree un archivo .env en la raíz del proyecto con las siguientes credenciales:
+```bash
+PUBLIC_SUPABASE_URL=[https://tu-proyecto.supabase.co](https://tu-proyecto.supabase.co)
+PUBLIC_SUPABASE_ANON_KEY=tu-llave-anonima
+VIRUSTOTAL_API_KEY=tu-api-key-de-virustotal
 ```
+### 5. Despliegue Local
+```bash
+pnpm dev
+```
+---
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+Desarrollado por: Bryan Andrés Belandria Viña
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Propósito: Proyecto de Ciberseguridad - Ingeniería en Sistemas de la Universdidad Alejandro de Humboldt.
