@@ -79,6 +79,23 @@ bundle del navegador, y la clave secreta omite el row-level security. Solo las l
 ```bash
 pnpm dev
 ```
+
+### 6. Verificar la configuración
+
+`GET /api/health` responde si cada variable está presente y si la base contesta de verdad:
+
+```bash
+curl https://shield-link.vercel.app/api/health
+```
+
+```json
+{ "supabase": { "url": true, "clave": true, "alcanzable": true }, "cacheActivo": true }
+```
+
+Existe porque una clave ausente y una clave equivocada producen el mismo síntoma —
+ninguno— visto desde fuera: el escáner responde igual, solo que sin caché y gastando
+cuota de VirusTotal en cada consulta. El endpoint devuelve únicamente booleanos; no
+expone el valor, el prefijo ni la longitud de ningún secreto.
 ---
 
 Desarrollado por: Bryan Andrés Belandria Viña

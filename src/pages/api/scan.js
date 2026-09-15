@@ -159,25 +159,37 @@ export const POST = async ({ request }) => {
 
   // 2 and 3. Local reputation cache. A hit here answers without touching VirusTotal.
   if (supabase) {
-    const { data: blanca } = await supabase
+    const { data: blanca, error: errorBlanca } = await supabase
       .from('lista_blanca')
       .select('url_segura')
       .eq('url_segura', urlLimpia)
       .maybeSingle();
 
+    // A failed lookup must not block the scan — the later layers still produce a verdict —
+    // but it must not pass unnoticed either. A wrong or missing key looks exactly like an
+    // empty cache from the outside, so every lookup silently spends VirusTotal quota.
+    if (errorBlanca) console.error('[scan] lista_blanca:', errorBlanca.message);
+
     if (blanca) {
       return json(veredicto('seguro', 'Enlace verificado en nuestra lista de confianza.'));
     }
 
-    const { data: negra } = await supabase
+    const { data: negra, error: errorNegra } = await supabase
       .from('lista_negra')
       .select('motivo')
       .eq('url_maliciosa', urlLimpia)
       .maybeSingle();
 
+    if (errorNegra) console.error('[scan] lista_negra:', errorNegra.message);
+
     if (negra) {
       return json(veredicto('peligroso', `Amenaza confirmada: ${negra.motivo}`));
     }
+  } else {
+    console.error(
+      '[scan] Supabase no configurado: faltan SUPABASE_URL o SUPABASE_SECRET_KEY. ' +
+        'El escaneo funciona, pero sin caché cada consulta gasta cuota de VirusTotal.',
+    );
   }
 
   // 4. Global engines.
@@ -201,8 +213,9 @@ export const POST = async ({ request }) => {
             { onConflict: 'url_maliciosa' },
           );
       }
-    } catch {
-      /* the verdict stands whether or not it was cached */
+    } catch (e) {
+      // The verdict stands whether or not it was cached; only the quota saving is lost.
+      console.error('[scan] no se pudo cachear el veredicto:', e?.message ?? e);
     }
   }
 
