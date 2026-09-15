@@ -13,7 +13,7 @@
 ---
 
 ## 🛠️ Stack Tecnológico
-- **Frontend/Backend:** [Astro](https://astro.build/) (v4+) - Renderizado en el servidor (SSR).
+- **Frontend/Backend:** [Astro](https://astro.build/) v6 - Renderizado en el servidor (SSR).
 - **Base de Datos:** [Supabase](https://supabase.com/) - PostgreSQL para gestión de listas blancas y negras.
 - **Gestor de Paquetes:** [pnpm](https://pnpm.io/) - Gestión eficiente de dependencias.
 - **API de Seguridad:** [VirusTotal v3 API](https://www.virustotal.com/).
@@ -26,7 +26,10 @@ El sistema opera bajo una estrategia de **Zero Trust**:
 
 1.  **Filtro Heurístico:** Bloqueo inmediato de extensiones maliciosas conocidas.
 2.  **Caché Local (Reputación):** Consulta en Supabase para evitar re-analizar sitios ya verificados en `lista_blanca` o `lista_negra`.
-3.  **Escaneo Global:** Análisis en tiempo real mediante los 70+ motores de VirusTotal.
+3.  **Escaneo Global:** Análisis en tiempo real mediante los ~90 motores de VirusTotal. El
+    veredicto tiene tres niveles, no dos: hacen falta varios motores coincidentes para
+    declarar un enlace peligroso, porque un puñado de detecciones sobre noventa suele ser
+    un falso positivo — `google.com` mismo reporta 2.
 4.  **Persistencia:** Almacenamiento automático del veredicto para optimizar futuras consultas.
 
 ---
@@ -39,22 +42,35 @@ El sistema opera bajo una estrategia de **Zero Trust**:
 
 ### 2. Instalación
 ```bash
-git clone [https://github.com/TU_USUARIO/shield-link.git](https://github.com/TU_USUARIO/shield-link.git)
+git clone https://github.com/BryanBel/shield-link.git
 cd shield-link
 pnpm install 
 ```
 ### 3. Configuración de Base de Datos
 
-Para configurar las tablas y políticas de seguridad (RLS), ejecute el contenido del archivo schema.sql (ubicado en la raíz) en el SQL Editor de su proyecto en Supabase.
+Ejecute el contenido de `schema.sql` (en la raíz del proyecto) en el SQL Editor de Supabase. El
+archivo es idempotente: crea las tablas si no existen y vuelve a aplicar las políticas de
+seguridad sin borrar datos.
+
+Las tablas quedan con RLS activado y **sin ninguna política**, de modo que PostgreSQL rechaza
+toda consulta anónima. El único acceso es el de la ruta `/api/scan`, que corre en el servidor
+con la *service role key*. Esto es deliberado: el escáner necesita escribir para cachear
+veredictos, y cualquier política que permitiera escribir desde el navegador permitiría también
+que un tercero insertara una URL maliciosa en `lista_blanca` y Shield Link la diera por segura.
 
 ### 4. Variables de Entorno
 
-Cree un archivo .env en la raíz del proyecto con las siguientes credenciales:
+Copie `.env.example` a `.env` y complete los valores:
+
 ```bash
-PUBLIC_SUPABASE_URL=[https://tu-proyecto.supabase.co](https://tu-proyecto.supabase.co)
-PUBLIC_SUPABASE_ANON_KEY=tu-llave-anonima
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 VIRUSTOTAL_API_KEY=tu-api-key-de-virustotal
 ```
+
+Ninguna lleva el prefijo `PUBLIC_` a propósito: Astro expone las variables `PUBLIC_*` al
+bundle del navegador, y la *service role key* omite el row-level security. Solo las lee
+`src/utils/supabase.server.js`, que a su vez solo importa `/api/scan`.
 ### 5. Despliegue Local
 ```bash
 pnpm dev
@@ -63,4 +79,4 @@ pnpm dev
 
 Desarrollado por: Bryan Andrés Belandria Viña
 
-Propósito: Proyecto de Ciberseguridad - Ingeniería en Sistemas de la Universdidad Alejandro de Humboldt.
+Propósito: Proyecto de Ciberseguridad — Ingeniería en Informática, Universidad Alejandro de Humboldt.

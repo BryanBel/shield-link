@@ -52,12 +52,23 @@ import Layout from '../layouts/Layout.astro';
                 </div>
             `;
         } else {
-            // Caso 2: Veredicto de seguridad (Verde o Rojo)
-            resultDiv.className = res.seguro ? 'safe' : 'danger';
+            // Caso 2: veredicto de seguridad. Son tres niveles, no dos: la mayoría de las
+            // URLs que VirusTotal marca lo hacen con un puñado de motores sobre noventa,
+            // y presentar eso como "peligroso" es tan engañoso como ocultarlo.
+            const NIVELES = {
+                seguro:     { clase: 'safe',    icono: '✅', titulo: 'Enlace Seguro' },
+                precaucion: { clase: 'warning', icono: '⚠️', titulo: 'Requiere Precaución' },
+                peligroso:  { clase: 'danger',  icono: '❌', titulo: 'Enlace Peligroso' },
+            };
+
+            // Fall back on the older boolean if the response predates `nivel`.
+            const nivel = NIVELES[res.nivel] ?? (res.seguro ? NIVELES.seguro : NIVELES.peligroso);
+
+            resultDiv.className = nivel.clase;
             resultDiv.innerHTML = `
                 <div class="verdict-content">
-                    <span class="icon">${res.seguro ? '✅' : '❌'}</span>
-                    <h2>${res.seguro ? 'Enlace Seguro' : 'Enlace Peligroso'}</h2>
+                    <span class="icon">${nivel.icono}</span>
+                    <h2>${nivel.titulo}</h2>
                     <p>${res.motivo}</p>
                     <button id="resetBtn" class="secondary-btn">Escanear otro enlace</button>
                 </div>
