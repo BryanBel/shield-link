@@ -64,12 +64,16 @@ Copie `.env.example` a `.env` y complete los valores:
 
 ```bash
 SUPABASE_URL=https://tu-proyecto.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+SUPABASE_SECRET_KEY=sb_secret_...
 VIRUSTOTAL_API_KEY=tu-api-key-de-virustotal
 ```
 
-Ninguna lleva el prefijo `PUBLIC_` a propósito: Astro expone las variables `PUBLIC_*` al
-bundle del navegador, y la *service role key* omite el row-level security. Solo las lee
+Use la clave **secret** (`sb_secret_...`) de *Project Settings → API Keys*, no la
+publishable: esta última es la clave pública del navegador y no tiene acceso a estas
+tablas.
+
+Ninguna variable lleva el prefijo `PUBLIC_` a propósito: Astro expone las `PUBLIC_*` al
+bundle del navegador, y la clave secreta omite el row-level security. Solo las lee
 `src/utils/supabase.server.js`, que a su vez solo importa `/api/scan`.
 ### 5. Despliegue Local
 ```bash

@@ -13,13 +13,20 @@ import { createClient } from '@supabase/supabase-js';
  * Note the variable names carry no PUBLIC_ prefix, so Astro refuses to expose them to
  * client code even by accident.
  *
+ * SUPABASE_SECRET_KEY is the name Supabase uses today; SUPABASE_SERVICE_ROLE_KEY is the
+ * legacy name for the same thing and is read as a fallback so an older deployment's
+ * environment keeps working.
+ *
  * Vercel injects environment variables at runtime rather than at build time, so read
  * process.env first and fall back to import.meta.env for local `astro dev`.
  */
 export function getSupabase() {
   const url = process.env.SUPABASE_URL ?? import.meta.env.SUPABASE_URL;
   const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.SUPABASE_SECRET_KEY ??
+    import.meta.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) return null;
 
