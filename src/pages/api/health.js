@@ -47,6 +47,10 @@ export const GET = async () => {
           error,
         },
         virustotal: { clave: env('VIRUSTOTAL_API_KEY') },
+        // package.json bounds engines.node to a range rather than leaving it open-ended,
+        // so the build cannot jump to a new Node major on its own. This reports which
+        // version inside that range the platform actually chose.
+        node: process.version,
         cacheActivo: alcanzable,
       },
       null,
