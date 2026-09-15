@@ -1,103 +1,139 @@
-# 🛡️ Shield Link - Sistema de Análisis de Integridad de URLs
+**English** | [Español](README.es.md)
 
-**Shield Link** es una herramienta de ciberseguridad desarrollada con el framework **Astro**, diseñada para proteger a los usuarios mediante el análisis profundo de enlaces sospechosos. El sistema utiliza una arquitectura de inspección en cascada para determinar la seguridad de una URL antes de que el usuario interactúe con ella.
+# Shield Link
 
----
+A URL safety scanner. Paste a link, get a verdict before you click it.
 
-## 🚀 Características Principales
-- **Análisis Multi-Capa:** Consulta una base de datos local de reputación, motores globales y reglas heurísticas proactivas.
-- **Seguridad Server-Side:** Integración con la API de VirusTotal protegida mediante *Astro API Routes* (BFF).
-- **Caché de Inteligencia:** Registro automático de amenazas y sitios seguros en Supabase para optimizar tiempos de respuesta y cuotas de API.
-- **Validación Heurística:** Bloqueo preventivo de TLDs de alto riesgo (`.xyz`, `.zip`, `.tk`) y protocolos inseguros.
+**Live at [shield-link.vercel.app](https://shield-link.vercel.app)**
 
----
+![The Shield Link scanner](docs/scanner.webp)
 
-## 🛠️ Stack Tecnológico
-- **Frontend/Backend:** [Astro](https://astro.build/) v6 - Renderizado en el servidor (SSR).
-- **Base de Datos:** [Supabase](https://supabase.com/) - PostgreSQL para gestión de listas blancas y negras.
-- **Gestor de Paquetes:** [pnpm](https://pnpm.io/) - Gestión eficiente de dependencias.
-- **API de Seguridad:** [VirusTotal v3 API](https://www.virustotal.com/).
-- **Despliegue:** [Vercel](https://vercel.com/).
+Built as a cybersecurity project for the Computer Engineering programme at Universidad
+Alejandro de Humboldt.
 
----
+## How a verdict is reached
 
-## 🧠 Arquitectura de Análisis (Flujo en Cascada)
-El sistema opera bajo una estrategia de **Zero Trust**:
+Six layers, cheapest first. Each one can answer on its own, so most links never reach the
+paid API at the bottom.
 
-1.  **Filtro Heurístico:** Bloqueo inmediato de extensiones maliciosas conocidas.
-2.  **Caché Local (Reputación):** Consulta en Supabase para evitar re-analizar sitios ya verificados en `lista_blanca` o `lista_negra`.
-3.  **Escaneo Global:** Análisis en tiempo real mediante los ~90 motores de VirusTotal. El
-    veredicto tiene tres niveles, no dos: hacen falta varios motores coincidentes para
-    declarar un enlace peligroso, porque un puñado de detecciones sobre noventa suele ser
-    un falso positivo — `google.com` mismo reporta 2.
-4.  **Persistencia:** Almacenamiento automático del veredicto para optimizar futuras consultas.
+| # | Layer | What it decides |
+| - | ----- | --------------- |
+| 1 | Format validation | Rejects anything that is not an `http(s)` URL, before any work happens |
+| 2 | High-risk TLD heuristic | Blocks `.xyz`, `.zip`, `.mov`, `.tk`, `.fit`, `.icu`, `.top` outright — these carry phishing and malware far out of proportion to their share of the web |
+| 3 | Local allowlist | A URL already cleared is answered from Postgres, not re-scanned |
+| 4 | Local blocklist | A URL already found malicious is answered the same way, with the original reason |
+| 5 | VirusTotal API v3 | ~90 engines, queried only for URLs the first four layers could not settle |
+| 6 | Protocol heuristic | Last resort: plain `http` with no reputation data anywhere is called out as unencrypted |
 
----
+Every confident verdict from layer 5 is written back into layer 3 or 4, so the second
+lookup of the same URL costs nothing. In production that is the difference between a
+790 ms answer and a 350 ms one, and it keeps the free tier's 500-requests-a-day budget
+for links that actually need it.
 
-## ⚙️ Configuración y Ejecución Local
+## Three verdicts, not two
 
-### 1. Requisitos Previos
-- **Node.js** (v18.0 o superior)
-- **pnpm** instalado (`npm install -g pnpm`)
+VirusTotal aggregates around ninety engines of very uneven quality, and a handful of
+detections on an established domain is routinely noise. `google.com` itself reports two
+engines calling it malicious against sixty-one calling it harmless. Treating "one or more
+engines" as dangerous — which is what this project did at first — labels most of the web
+a threat and teaches the user to ignore the warning.
 
-### 2. Instalación
-```bash
-git clone https://github.com/BryanBel/shield-link.git
-cd shield-link
-pnpm install 
-```
-### 3. Configuración de Base de Datos
+So the scanner reports three levels and shows its arithmetic:
 
-Ejecute el contenido de `schema.sql` (en la raíz del proyecto) en el SQL Editor de Supabase. El
-archivo es idempotente: crea las tablas si no existen y vuelve a aplicar las políticas de
-seguridad sin borrar datos.
+```jsonc
+// https://github.com  — nothing found
+{ "nivel": "seguro", "motivo": "Análisis global completado: ninguno de los 90 motores de seguridad detectó amenazas." }
 
-Las tablas quedan con RLS activado y **sin ninguna política**, de modo que PostgreSQL rechaza
-toda consulta anónima. El único acceso es el de la ruta `/api/scan`, que corre en el servidor
-con la *service role key*. Esto es deliberado: el escáner necesita escribir para cachear
-veredictos, y cualquier política que permitiera escribir desde el navegador permitiría también
-que un tercero insertara una URL maliciosa en `lista_blanca` y Shield Link la diera por segura.
+// https://google.com — a minority of engines disagree, and the user is told exactly that
+{ "nivel": "precaucion", "motivo": "Detecciones minoritarias: 2 de 90 motores marcan este enlace. Esa proporción suele ser un falso positivo, pero conviene revisarlo antes de abrirlo." }
 
-### 4. Variables de Entorno
-
-Copie `.env.example` a `.env` y complete los valores:
-
-```bash
-SUPABASE_URL=https://tu-proyecto.supabase.co
-SUPABASE_SECRET_KEY=sb_secret_...
-VIRUSTOTAL_API_KEY=tu-api-key-de-virustotal
+// https://something.xyz — blocked before spending a request
+{ "nivel": "peligroso", "motivo": "Bloqueo preventivo: la extensión .xyz se utiliza frecuentemente para campañas de phishing y distribución de malware." }
 ```
 
-Use la clave **secret** (`sb_secret_...`) de *Project Settings → API Keys*, no la
-publishable: esta última es la clave pública del navegador y no tiene acceso a estas
-tablas.
+A `precaucion` verdict is deliberately never cached: it is a judgement call about
+ambiguous evidence, and writing it into either list would harden a maybe into a yes or
+a no.
 
-Ninguna variable lleva el prefijo `PUBLIC_` a propósito: Astro expone las `PUBLIC_*` al
-bundle del navegador, y la clave secreta omite el row-level security. Solo las lee
-`src/utils/supabase.server.js`, que a su vez solo importa `/api/scan`.
-### 5. Despliegue Local
-```bash
-pnpm dev
+## Stack
+
+| Layer | Choice | Why |
+| ----- | ------ | --- |
+| Framework | [Astro](https://astro.build) 6, SSR on [Vercel](https://vercel.com) | The page is static except for one endpoint; Astro ships no JavaScript for the rest |
+| Database | [Supabase](https://supabase.com) (Postgres) | Two reputation tables, reached only from the server |
+| Threat intelligence | [VirusTotal API v3](https://www.virustotal.com) | Free tier, called from the server so the key never ships to a browser |
+| Package manager | [pnpm](https://pnpm.io) | |
+
+## Security
+
+The reputation tables decide whether a user is told a link is safe, which makes write
+access to them the most sensitive thing in the project. An early version shipped this:
+
+```sql
+CREATE POLICY "..." ON lista_blanca FOR ALL USING (true);
 ```
 
-### 6. Verificar la configuración
+`FOR ALL` covers select, insert, update and delete, and `USING (true)` grants it to every
+caller — including the anonymous key, which is public by design and readable in any
+browser's devtools. Anyone could have inserted a malicious URL into the allowlist and had
+Shield Link vouch for it, or emptied both tables.
 
-`GET /api/health` responde si cada variable está presente y si la base contesta de verdad:
+A narrower policy would not have fixed it: the scanner has to write in order to cache
+verdicts, so any policy permitting a browser write is one an attacker can use. The whole
+cascade moved server-side instead. Today:
 
-```bash
+- `schema.sql` enables row-level security with **no policies at all**, which denies every
+  anonymous and authenticated request by default, and revokes the table grants too.
+- Only `/api/scan` touches the database, holding the secret key that bypasses RLS.
+- The browser bundle contains no Supabase client and no key — verifiable with
+  `grep -r supabase dist/client` after a build.
+
+## Running it locally
+
+```sh
+pnpm install
+cp .env.example .env    # fill in the three values below
+pnpm dev                # http://localhost:4321
+```
+
+Run `schema.sql` in the Supabase SQL editor. It is idempotent: it creates the tables if
+they are missing and re-applies the security policies without touching existing rows.
+
+| Variable | Where to get it |
+| -------- | --------------- |
+| `SUPABASE_URL` | Supabase dashboard → Project Settings → API Keys |
+| `SUPABASE_SECRET_KEY` | Same page — the **secret** key (`sb_secret_…`), not the publishable one |
+| `VIRUSTOTAL_API_KEY` | virustotal.com → your profile → API key |
+
+None of them carry a `PUBLIC_` prefix on purpose: Astro exposes `PUBLIC_*` to client
+bundles, and the secret key bypasses row-level security.
+
+## Checking the configuration
+
+```sh
 curl https://shield-link.vercel.app/api/health
 ```
 
 ```json
-{ "supabase": { "url": true, "clave": true, "alcanzable": true }, "cacheActivo": true }
+{
+  "supabase": {
+    "url": true,
+    "clave": true,
+    "nombreUsado": "SUPABASE_SECRET_KEY",
+    "alcanzable": true,
+    "error": null
+  },
+  "virustotal": { "clave": true },
+  "node": "v24.19.0",
+  "cacheActivo": true
+}
 ```
 
-Existe porque una clave ausente y una clave equivocada producen el mismo síntoma —
-ninguno— visto desde fuera: el escáner responde igual, solo que sin caché y gastando
-cuota de VirusTotal en cada consulta. El endpoint devuelve únicamente booleanos; no
-expone el valor, el prefijo ni la longitud de ningún secreto.
+A missing key and a wrong key otherwise look identical from outside — the scanner keeps
+answering, just without its cache, quietly spending VirusTotal quota on every request
+until the daily limit runs out. The endpoint returns booleans only; no value, prefix or
+length of any secret is exposed.
+
 ---
 
-Desarrollado por: Bryan Andrés Belandria Viña
-
-Propósito: Proyecto de Ciberseguridad — Ingeniería en Informática, Universidad Alejandro de Humboldt.
+Built by Bryan Belandria — [github.com/BryanBel](https://github.com/BryanBel)
