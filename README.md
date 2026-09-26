@@ -60,7 +60,7 @@ a no.
 | Layer | Choice | Why |
 | ----- | ------ | --- |
 | Framework | [Astro](https://astro.build) 6, SSR on [Vercel](https://vercel.com) | The page is static except for one endpoint; Astro ships no JavaScript for the rest |
-| Database | [Supabase](https://supabase.com) (Postgres) | Two reputation tables, reached only from the server |
+| Database | PostgreSQL on [Neon](https://neon.tech) | Two reputation tables, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
 | Threat intelligence | [VirusTotal API v3](https://www.virustotal.com) | Free tier, called from the server so the key never ships to a browser |
 | Package manager | [pnpm](https://pnpm.io) | |
 
@@ -82,11 +82,11 @@ A narrower policy would not have fixed it: the scanner has to write in order to 
 verdicts, so any policy permitting a browser write is one an attacker can use. The whole
 cascade moved server-side instead. Today:
 
-- `schema.sql` enables row-level security with **no policies at all**, which denies every
-  anonymous and authenticated request by default, and revokes the table grants too.
-- Only `/api/scan` touches the database, holding the secret key that bypasses RLS.
-- The browser bundle contains no Supabase client and no key — verifiable with
-  `grep -r supabase dist/client` after a build.
+- The database moved off Supabase to Neon, so there is no PostgREST and no anonymous key
+  in front of it. It is reachable only with the connection string.
+- Only `/api/scan` and `/api/health` touch it, and both run on the server.
+- The browser bundle contains no database client and no credential — verifiable with
+  `grep -r neon dist/client` after a build.
 
 ## Running it locally
 
@@ -96,17 +96,17 @@ cp .env.example .env    # fill in the three values below
 pnpm dev                # http://localhost:4321
 ```
 
-Run `schema.sql` in the Supabase SQL editor. It is idempotent: it creates the tables if
-they are missing and re-applies the security policies without touching existing rows.
+Run `schema.sql` against that database. It is idempotent: it creates the tables if they
+are missing and leaves existing rows alone.
 
 | Variable | Where to get it |
 | -------- | --------------- |
-| `SUPABASE_URL` | Supabase dashboard → Project Settings → API Keys |
-| `SUPABASE_SECRET_KEY` | Same page — the **secret** key (`sb_secret_…`), not the publishable one |
+| `DATABASE_URL` | Any PostgreSQL connection string. The project speaks plain SQL, not a vendor SDK |
+
 | `VIRUSTOTAL_API_KEY` | virustotal.com → your profile → API key |
 
-None of them carry a `PUBLIC_` prefix on purpose: Astro exposes `PUBLIC_*` to client
-bundles, and the secret key bypasses row-level security.
+Neither carries a `PUBLIC_` prefix on purpose: Astro exposes `PUBLIC_*` to client bundles,
+and the connection string grants full access to the database.
 
 ## Checking the configuration
 

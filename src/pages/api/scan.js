@@ -1,4 +1,4 @@
-import { getSupabase } from '../../utils/supabase.server.js';
+import { getSql } from '../../utils/db.server.js';
 
 /**
  * Astro's default output is static. Without this line the route is built as a plain
@@ -155,40 +155,35 @@ export const POST = async ({ request }) => {
     );
   }
 
-  const supabase = getSupabase();
+  const sql = getSql();
 
   // 2 and 3. Local reputation cache. A hit here answers without touching VirusTotal.
-  if (supabase) {
-    const { data: blanca, error: errorBlanca } = await supabase
-      .from('lista_blanca')
-      .select('url_segura')
-      .eq('url_segura', urlLimpia)
-      .maybeSingle();
-
+  if (sql) {
     // A failed lookup must not block the scan — the later layers still produce a verdict —
-    // but it must not pass unnoticed either. A wrong or missing key looks exactly like an
-    // empty cache from the outside, so every lookup silently spends VirusTotal quota.
-    if (errorBlanca) console.error('[scan] lista_blanca:', errorBlanca.message);
+    // but it must not pass unnoticed either. A missing or wrong connection string looks
+    // exactly like an empty cache from the outside, so every lookup would silently spend
+    // VirusTotal quota.
+    try {
+      const blanca = await sql`
+        select url_segura from lista_blanca where url_segura = ${urlLimpia} limit 1
+      `;
+      if (blanca.length > 0) {
+        return json(veredicto('seguro', 'Enlace verificado en nuestra lista de confianza.'));
+      }
 
-    if (blanca) {
-      return json(veredicto('seguro', 'Enlace verificado en nuestra lista de confianza.'));
-    }
-
-    const { data: negra, error: errorNegra } = await supabase
-      .from('lista_negra')
-      .select('motivo')
-      .eq('url_maliciosa', urlLimpia)
-      .maybeSingle();
-
-    if (errorNegra) console.error('[scan] lista_negra:', errorNegra.message);
-
-    if (negra) {
-      return json(veredicto('peligroso', `Amenaza confirmada: ${negra.motivo}`));
+      const negra = await sql`
+        select motivo from lista_negra where url_maliciosa = ${urlLimpia} limit 1
+      `;
+      if (negra.length > 0) {
+        return json(veredicto('peligroso', `Amenaza confirmada: ${negra[0].motivo}`));
+      }
+    } catch (error) {
+      console.error('[scan] consulta de reputación falló:', error.message);
     }
   } else {
     console.error(
-      '[scan] Supabase no configurado: faltan SUPABASE_URL o SUPABASE_SECRET_KEY. ' +
-        'El escaneo funciona, pero sin caché cada consulta gasta cuota de VirusTotal.',
+      '[scan] DATABASE_URL no está definida. El escaneo funciona, pero sin caché cada ' +
+        'consulta gasta cuota de VirusTotal.',
     );
   }
 
@@ -199,19 +194,19 @@ export const POST = async ({ request }) => {
   // verdicts are cached: a "precaución" is a judgement call about ambiguous evidence, and
   // writing it into either list would harden a maybe into a yes or a no. A failed write
   // only costs quota next time, so it must not change the answer the user gets.
-  if (resultadoVT && resultadoVT.nivel !== 'precaucion' && supabase) {
+  if (resultadoVT && resultadoVT.nivel !== 'precaucion' && sql) {
     try {
       if (resultadoVT.seguro) {
-        await supabase
-          .from('lista_blanca')
-          .upsert({ url_segura: urlLimpia }, { onConflict: 'url_segura' });
+        await sql`
+          insert into lista_blanca (url_segura) values (${urlLimpia})
+          on conflict (url_segura) do nothing
+        `;
       } else {
-        await supabase
-          .from('lista_negra')
-          .upsert(
-            { url_maliciosa: urlLimpia, motivo: resultadoVT.motivo },
-            { onConflict: 'url_maliciosa' },
-          );
+        await sql`
+          insert into lista_negra (url_maliciosa, motivo)
+          values (${urlLimpia}, ${resultadoVT.motivo})
+          on conflict (url_maliciosa) do update set motivo = excluded.motivo
+        `;
       }
     } catch (e) {
       // The verdict stands whether or not it was cached; only the quota saving is lost.

@@ -61,7 +61,7 @@ no.
 | Capa | Elección | Por qué |
 | ---- | -------- | ------- |
 | Framework | [Astro](https://astro.build) 6, SSR en [Vercel](https://vercel.com) | La página es estática salvo por un endpoint; Astro no envía JavaScript para el resto |
-| Base de datos | [Supabase](https://supabase.com) (Postgres) | Dos tablas de reputación, accesibles solo desde el servidor |
+| Base de datos | PostgreSQL en [Neon](https://neon.tech) | Dos tablas de reputación, accesibles solo desde el servidor. El driver serverless de Neon habla por HTTP, lo que encaja con una función de Vercel que vive una sola petición — un pool ahí abre una conexión por invocación |
 | Inteligencia de amenazas | [VirusTotal API v3](https://www.virustotal.com) | Plan gratuito, llamado desde el servidor para que la clave nunca llegue al navegador |
 | Gestor de paquetes | [pnpm](https://pnpm.io) | |
 
@@ -85,11 +85,11 @@ Una política más estrecha no lo habría arreglado: el escáner necesita escrib
 cachear veredictos, así que cualquier política que permita escribir desde el navegador es
 una que un atacante puede usar. En su lugar, toda la cascada se movió al servidor. Hoy:
 
-- `schema.sql` activa row-level security **sin ninguna política**, lo que deniega por
-  defecto toda petición anónima y autenticada, y además revoca los permisos de tabla.
-- Solo `/api/scan` toca la base de datos, con la clave secreta que omite el RLS.
-- El bundle del navegador no contiene cliente de Supabase ni clave alguna — comprobable
-  con `grep -r supabase dist/client` después de un build.
+- La base se movió de Supabase a Neon, así que ya no hay PostgREST ni clave anónima
+  delante. Solo se llega con la cadena de conexión.
+- Solo `/api/scan` y `/api/health` la tocan, y ambos corren en el servidor.
+- El bundle del navegador no contiene cliente de base de datos ni credencial — comprobable
+  con `grep -r neon dist/client` después de un build.
 
 ## Ejecutarlo en local
 
@@ -99,17 +99,17 @@ cp .env.example .env    # completa los tres valores de abajo
 pnpm dev                # http://localhost:4321
 ```
 
-Ejecuta `schema.sql` en el SQL Editor de Supabase. Es idempotente: crea las tablas si no
-existen y vuelve a aplicar las políticas de seguridad sin tocar las filas existentes.
+Ejecuta `schema.sql` contra esa base. Es idempotente: crea las tablas si no existen y deja
+intactas las filas que ya estén.
 
 | Variable | Dónde obtenerla |
 | -------- | --------------- |
-| `SUPABASE_URL` | Panel de Supabase → Project Settings → API Keys |
-| `SUPABASE_SECRET_KEY` | La misma página — la clave **secret** (`sb_secret_…`), no la publishable |
+| `DATABASE_URL` | Cualquier cadena de conexión de PostgreSQL. El proyecto usa SQL plano, no un SDK |
+
 | `VIRUSTOTAL_API_KEY` | virustotal.com → tu perfil → API key |
 
 Ninguna lleva prefijo `PUBLIC_` a propósito: Astro expone las `PUBLIC_*` a los bundles del
-cliente, y la clave secreta omite el row-level security.
+cliente, y la cadena de conexión da acceso completo a la base.
 
 ## Verificar la configuración
 
