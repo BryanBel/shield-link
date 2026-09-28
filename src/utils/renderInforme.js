@@ -203,7 +203,8 @@ function tecnico(d) {
       ['Enlace analizado', d.url],
       ['Recorrido', saltos.length > 1 ? saltos.map((s) => `${s.estado} · ${s.url}`) : null],
       ['Destino final', d.destino.urlFinal && d.destino.urlFinal !== d.url ? d.destino.urlFinal : null],
-      ['Redirecciones vistas por VirusTotal', d.destino.redireccionesConocidas],
+      // VirusTotal often lists the analysed URL itself, sometimes twice; only show hops that add something.
+      ['Redirecciones vistas por VirusTotal', [...new Set(d.destino.redireccionesConocidas)].filter((u) => u !== d.url)],
     ]),
     bloque('Dominio', d.dominio ? [
       ['Dominio', d.dominio.nombre],
@@ -263,22 +264,29 @@ export function renderInforme(res) {
   const senales = res.senales ?? [];
   const completo = Boolean(res.detalles);
 
+  // Two groups: what you read first (verdict, link, reason, the facts) and what you open
+  // if you want more. On a wide screen they sit side by side so the card fits the window.
+  const extra = [porQue(senales), completo ? tecnico(res.detalles) : null].filter(Boolean);
+
   return el(
     'article',
     { class: `informe informe-${nivel.clase}` },
     el(
-      'header',
-      { class: 'informe-cabecera' },
-      el('span', { class: 'informe-icono', 'aria-hidden': 'true' }, nivel.icono),
-      el('div', {}, el('h2', {}, nivel.titulo), res.certeza ? el('span', { class: `certeza certeza-${res.certeza}` }, `Certeza ${res.certeza}`) : null),
+      'div',
+      { class: 'informe-principal' },
+      el(
+        'header',
+        { class: 'informe-cabecera' },
+        el('span', { class: 'informe-icono', 'aria-hidden': 'true' }, nivel.icono),
+        el('div', {}, el('h2', {}, nivel.titulo), res.certeza ? el('span', { class: `certeza certeza-${res.certeza}` }, `Certeza ${res.certeza}`) : null),
+      ),
+      enlace(res.detalles?.url),
+      el('p', { class: 'informe-motivo' }, res.motivo),
+      completo ? ficha({ ...res, senales }) : null,
+      nota(res),
+      el('button', { class: 'secondary-btn', id: 'resetBtn', type: 'button' }, 'Escanear otro enlace'),
     ),
-    enlace(res.detalles?.url),
-    el('p', { class: 'informe-motivo' }, res.motivo),
-    completo ? ficha({ ...res, senales }) : null,
-    porQue(senales),
-    completo ? tecnico(res.detalles) : null,
-    nota(res),
-    el('button', { class: 'secondary-btn', id: 'resetBtn', type: 'button' }, 'Escanear otro enlace'),
+    extra.length ? el('div', { class: 'informe-extra' }, extra) : null,
   );
 }
 

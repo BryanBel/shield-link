@@ -20,6 +20,7 @@ import Layout from '../layouts/Layout.astro';
     import { analizarSeguridad } from '../utils/scanner.js';
     import { renderAviso, renderInforme } from '../utils/renderInforme.js';
 
+    const main = document.querySelector('main') as HTMLElement;
     const btn = document.getElementById('scanBtn');
     const input = document.getElementById('linkInput') as HTMLInputElement;
     const resultDiv = document.getElementById('result') as HTMLElement;
@@ -46,9 +47,11 @@ import Layout from '../layouts/Layout.astro';
 
         // Los datos del informe se insertan como texto, nunca como HTML.
         resultDiv.replaceChildren(res.error ? renderAviso(res) : renderInforme(res));
+        main.classList.toggle('con-resultado', !res.error);
         resultDiv.focus();
 
         document.getElementById('resetBtn')?.addEventListener('click', () => {
+            main.classList.remove('con-resultado');
             resultDiv.classList.add('hidden');
             resultDiv.replaceChildren();
             inputContainer.classList.remove('hidden');
@@ -209,4 +212,46 @@ import Layout from '../layouts/Layout.astro';
         border-radius: 6px;
     }
     .informe:not(.informe-aviso) .secondary-btn { display: block; margin-left: auto; margin-right: auto; }
+    .informe-extra { margin-top: 1.25rem; }
+
+    /*
+     * Wide screens: the whole report fits the window. The header shrinks to one line, the
+     * card splits into two columns, and anything that grows — the folded signals, the
+     * technical detail — scrolls inside its own column instead of pushing the page down.
+     * Phones keep the single column; there is no height to fit it into.
+     */
+    @media (min-width: 960px) and (min-height: 560px) {
+        main.con-resultado {
+            max-width: 1120px;
+            height: calc(100dvh - 3rem);
+            margin: 1.5rem 0;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        main.con-resultado > h1 { font-size: 1.5rem; margin: 0; }
+        main.con-resultado > p { margin: 0.25rem 0 1rem; font-size: 0.85rem; color: #94a3b8; }
+        main.con-resultado #result:not(.hidden) { flex: 1; min-height: 0; display: flex; }
+
+        .con-resultado .informe {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            gap: 1.5rem;
+        }
+        .con-resultado .informe-principal,
+        .con-resultado .informe-extra {
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .con-resultado .informe-extra {
+            margin-top: 0;
+            padding-left: 1.5rem;
+            border-left: 1px solid #334155;
+        }
+        .con-resultado .informe-motivo { margin: 0.75rem 0; }
+        .con-resultado .ficha { margin-bottom: 0.75rem; }
+    }
 </style>
