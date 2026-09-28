@@ -170,9 +170,13 @@ export const POST = async (context) => {
 
   // The client validates the format too, for instant feedback, but that check is a
   // convenience and not a guarantee — anything reaching this endpoint is revalidated.
+  // The URL is parsed as typed. The parser already lowercases the scheme and the host,
+  // the only parts that are case-insensitive; the path and query are not. Lowercasing the
+  // whole string, as this used to, made bit.ly/AbC and bit.ly/abc one cache entry — so a
+  // harmless short link, once cleared, vouched for a different one that pointed anywhere.
   let urlObj;
   try {
-    urlObj = new URL(raw.toLowerCase());
+    urlObj = new URL(raw);
   } catch {
     return json({ error: true, motivo: 'URL no válida. Revisa la ortografía del enlace.' }, 400);
   }
@@ -187,6 +191,9 @@ export const POST = async (context) => {
     );
   }
 
+  // The fragment never reaches the server the link points to, so it cannot change what the
+  // link does; dropping it keeps page.html#a and page.html#b from being scanned twice.
+  urlObj.hash = '';
   const urlLimpia = urlObj.href;
   const host = urlObj.hostname;
 
