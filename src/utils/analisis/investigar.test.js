@@ -67,6 +67,18 @@ describe('analizarHtml', () => {
     assert.equal(analizarHtml('<script>if (location == 1) {}</script>', base).redireccionJs, false);
   });
 
+  it('reads the description the site publishes, preferring the plain meta tag', () => {
+    const p = analizarHtml(
+      '<meta property="og:site_name" content="GitHub"><meta property="og:description" content="Otra"><meta name="description" content="Donde se construye el software &amp; más">',
+      base,
+    );
+    assert.equal(p.nombreSitio, 'GitHub');
+    assert.equal(p.descripcion, 'Donde se construye el software & más');
+    assert.equal(analizarHtml('<meta property="og:description" content="Solo OG">', base).descripcion, 'Solo OG');
+    assert.equal(analizarHtml('<p>sin metas</p>', base).descripcion, null);
+    assert.ok(analizarHtml(`<meta name="description" content="${'x'.repeat(400)}">`, base).descripcion.length <= 280);
+  });
+
   it('lists external script hosts and counts iframes', () => {
     const p = analizarHtml('<script src="https://cdn.otro.com/a.js"></script><script src="/local.js"></script><iframe src="x"></iframe>', base);
     assert.deepEqual(p.scriptsExternos, ['cdn.otro.com']);

@@ -76,6 +76,21 @@ either — and the page says that in words rather than implying more than it kno
 }
 ```
 
+### What the site says, and whether it holds up
+
+The report quotes how the site describes itself — its meta description, or its title —
+and then checks that claim against evidence the site does not control: whether a brand it
+names itself after actually owns the domain, whether what it says it does matches how
+security vendors classify it, and how long the domain has existed. The conclusion is one
+of *holds up*, *doubtful*, *does not hold up* or *not enough evidence*, with the points
+behind it.
+
+These are fixed rules, not a language model. On a phishing page the description is the
+attacker's own text, and a model reading it can be talked into repeating it; a rule
+cannot. A page calling itself a brand it is not, or a vendor classifying the site as
+phishing, also raises a warning in the verdict, so the conclusion and the verdict never
+disagree.
+
 ### Visiting a link without being used by it
 
 A server that fetches a URL someone else chose can be pointed at itself — `127.0.0.1`, the

@@ -103,6 +103,19 @@ describe('generarSenales + decidirVeredicto', () => {
     assert.equal(r.nivel, 'seguro');
   });
 
+  it('a page that names itself after a brand it is not calls for caution, even without a login form', () => {
+    const pagina = { ...red().pagina, titulo: 'PayPal | Centro de ayuda', nombreSitio: 'PayPal' };
+    const r = analizar({ url: new URL('https://ayuda-pagos.com/'), vt: vtLimpio, red: red({ pagina, urlFinal: 'https://ayuda-pagos.com/', saltos: [{ url: 'https://ayuda-pagos.com/', estado: 200, host: 'ayuda-pagos.com', https: true }] }), rdap: rdapViejo });
+    assert.equal(r.nivel, 'precaucion');
+    assert.ok(ids(r.senales).includes('dice-ser-marca'));
+  });
+
+  it('a vendor classifying the site as phishing calls for caution when the engines are silent', () => {
+    const r = analizar({ url: new URL('https://github.com/'), vt: { ...vtLimpio, categorias: ['phishing and other frauds'] }, red: red(), rdap: rdapViejo });
+    assert.equal(r.nivel, 'precaucion');
+    assert.ok(ids(r.senales).includes('categoria-riesgo'));
+  });
+
   it('an official domain buried in a subdomain is dangerous', () => {
     const r = analizar({ url: new URL('https://paypal.com.cuenta-verificada.net/'), vt: { estado: 'desconocido' }, red: null, rdap: rdapViejo });
     assert.equal(r.nivel, 'peligroso');

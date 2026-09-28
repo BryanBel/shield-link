@@ -1,6 +1,7 @@
 import { domainToUnicode } from 'node:url';
 import { getDomain, getSubdomain } from 'tldts';
 
+import { marcaDeclarada, marcaEnTexto, RIESGOS } from './contraste.js';
 import { ACORTADORES, MARCAS, TLDS_PELIGROSOS } from './datos.js';
 
 /**
@@ -32,15 +33,6 @@ export function edad(dias) {
 }
 
 const fechaLarga = (iso) => new Date(iso).toLocaleDateString('es', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-const normalizar = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const escapar = (texto) => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-function marcaEnTexto(texto) {
-  if (!texto) return null;
-  const t = normalizar(texto);
-  return MARCAS.find((m) => m.claves.some((c) => new RegExp(`\\b${escapar(normalizar(c))}\\b`).test(t))) ?? null;
-}
-
 /** A brand whose name appears as a label of the host — or runs into one, for long names. */
 function marcaEnHost(host) {
   const partes = host.split(/[.-]/);
@@ -100,7 +92,8 @@ function senalesReputacion(vt, ahora, add, prefijo = '') {
   if (conocidoHace >= 365 && vt.maliciosos === 0) {
     add('vt-antiguo', 'bien', `VirusTotal lo conoce desde ${new Date(vt.primerEnvio).getUTCFullYear()}`, 'Un enlace con años de historial y sin detecciones es difícil de falsificar.');
   }
-  if (vt.categorias.length) add('vt-categorias', 'info', `Categorizado como: ${vt.categorias.slice(0, 4).join(', ')}`, 'Según las empresas de seguridad que clasifican la web.');
+  // Categories are not a signal: the card shows them where they belong, under "what this
+  // site is".
 }
 
 function senalesDominio(rdap, dominio, ahora, add, prefijo = '') {
@@ -257,6 +250,20 @@ export function generarSenales({ url, vt = null, vtDestino = null, red = null, r
   senalesTransporte(url, red, ahora, add);
   senalesDestino(url, dominio, red, vt, vtDestino, add);
   senalesPagina(red, add);
+
+  // What the page claims to be, and how vendors classify it — the same checks the
+  // "what this site is" contrast shows, so the verdict and that conclusion never disagree.
+  const dominioPagina = dominioFinal ?? dominio;
+  const declarada = marcaDeclarada(red?.pagina);
+  if (declarada && dominioPagina && !declarada.dominios.includes(dominioPagina) && !vistos.has('suplanta-marca')) {
+    add('dice-ser-marca', 'alerta', `Se presenta como ${declarada.nombre} sin serlo`, `La página dice ser ${declarada.nombre}, pero ${dominioPagina} no le pertenece.`);
+  }
+  const vtPagina = dominioFinal && dominioFinal !== dominio ? vtDestino : vt;
+  const riesgosas = vtPagina?.estado === 'conocido' ? vtPagina.categorias.filter((c) => RIESGOS.some((r) => c.includes(r))) : [];
+  if (riesgosas.length && !vistos.has('vt-malicioso') && !vistos.has('destino-malicioso')) {
+    add('categoria-riesgo', 'alerta', `Clasificado como ${riesgosas.slice(0, 2).join(' y ')}`, 'Al menos una empresa de seguridad lo clasifica así, aunque los motores no lo marquen como malicioso.');
+  }
+
   senalesUrl(url, dominio, add);
   senalesVisita(red, add);
 

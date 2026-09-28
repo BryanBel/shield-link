@@ -27,6 +27,41 @@ const sinQuery = (texto) => {
   }
 };
 
+const PALABRAS_VACIAS = new Set(['and', 'or', 'the', 'of', 'y', 'de']);
+const palabrasDe = (etiqueta) =>
+  new Set(
+    etiqueta
+      .split(/[^a-z0-9]+/)
+      .filter((p) => p && !PALABRAS_VACIAS.has(p))
+      // "search engine" and "search engines" are the same category.
+      .map((p) => (p.length > 3 && p.endsWith('s') ? p.slice(0, -1) : p)),
+  );
+const contenido = (a, b) => [...a].every((p) => b.has(p));
+// "searchengines" is "search engines" written as one word.
+const cubre = (b, a) => contenido(a.palabras, b.palabras) || (a.palabras.size === 1 && b.compacto.includes(a.compacto));
+
+/**
+ * Every vendor labels a site its own way — "search engines", "search engines/portals",
+ * "search engines and portals", "searchengines (alphamountain.ai)". A label whose words
+ * are all contained in another's says nothing new, so only the most complete one of each
+ * family is kept, in the order the vendors gave them.
+ */
+export function limpiarCategorias(valores) {
+  const items = valores
+    .map((v) => String(v).toLowerCase().replace(/\s*\([^)]*\)\s*$/, '').trim())
+    .filter(Boolean)
+    .map((etiqueta) => {
+      const palabras = palabrasDe(etiqueta);
+      return { etiqueta, palabras, compacto: [...palabras].join('') };
+    })
+    .filter((i) => i.palabras.size);
+
+  return items
+    .filter((a, i) => !items.some((b, j) => j !== i && cubre(b, a) && (b.palabras.size > a.palabras.size || j < i)))
+    .map((i) => i.etiqueta)
+    .slice(0, 5);
+}
+
 /**
  * `{ estado: 'conocido', ... }` with the report, `{ estado: 'desconocido' }` when
  * VirusTotal has never analysed the URL, or `{ estado: 'error' | 'sin-clave' }`. An outage
@@ -68,16 +103,7 @@ export async function consultarVirusTotal(url) {
       inofensivos: stats.harmless ?? 0,
       total,
       detecciones,
-      // Vendors label the same thing differently ("search engines", "searchengines",
-      // "search engines (alphamountain.ai)"); strip the attribution and collapse repeats.
-      categorias: [
-        ...new Map(
-          Object.values(a.categories ?? {})
-            .map((c) => String(c).toLowerCase().replace(/\s*\([^)]*\)\s*$/, '').trim())
-            .filter(Boolean)
-            .map((c) => [c.replace(/[^a-z]/g, ''), c]),
-        ).values(),
-      ].slice(0, 6),
+      categorias: limpiarCategorias(Object.values(a.categories ?? {})),
       reputacion: a.reputation ?? 0,
       votos: { inofensivo: a.total_votes?.harmless ?? 0, malicioso: a.total_votes?.malicious ?? 0 },
       primerEnvio: fecha(a.first_submission_date),

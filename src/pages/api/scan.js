@@ -2,6 +2,7 @@ import { getDomain } from 'tldts';
 
 import { getSql } from '../../utils/db.server.js';
 import { guardarAnalisis, hashUrl, leerAnalisis } from '../../utils/analisis/cache.server.js';
+import { contrastar } from '../../utils/analisis/contraste.js';
 import { TLDS_PELIGROSOS } from '../../utils/analisis/datos.js';
 import { investigar } from '../../utils/analisis/investigar.server.js';
 import { consumirCupo } from '../../utils/analisis/limite.server.js';
@@ -70,6 +71,15 @@ async function analizar(url) {
   const senales = generarSenales({ url, vt, vtDestino, red, rdap, rdapDestino });
   const { nivel, certeza, motivo } = decidirVeredicto(senales, { vt });
 
+  // The page that was read is the final one, so it is judged against the final domain.
+  const otroDestino = Boolean(dominioFinal && dominio && dominioFinal !== dominio);
+  const sitio = contrastar({
+    dominio: dominioFinal ?? dominio,
+    pagina: red?.pagina ?? null,
+    vt: otroDestino ? vtDestino : vt,
+    rdap: otroDestino ? rdapDestino : rdap,
+  });
+
   const reputacion = (v) =>
     v?.estado === 'conocido'
       ? {
@@ -93,6 +103,7 @@ async function analizar(url) {
     seguro: nivel === 'seguro',
     certeza,
     motivo,
+    sitio,
     senales,
     detalles: {
       url: sinQuery(url),

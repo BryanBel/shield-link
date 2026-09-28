@@ -208,13 +208,20 @@ export function analizarHtml(html, urlBase) {
   const titulo = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
 
   let metaRefresh = null;
+  const metas = {};
   for (const [etiqueta] of html.matchAll(/<meta\b[^>]*>/gi)) {
     const a = atributos(etiqueta);
     if ((a['http-equiv'] ?? '').toLowerCase() === 'refresh') {
       const destino = (a.content ?? '').match(/url\s*=\s*['"]?([^'";]+)/i);
       if (destino && hostDe(destino[1].trim(), urlBase)) metaRefresh = sinQuery(new URL(destino[1].trim(), urlBase));
     }
+    // The description a site publishes for search engines and link previews. First one wins.
+    const nombre = (a.name ?? a.property ?? '').toLowerCase();
+    if (['description', 'og:description', 'og:site_name', 'twitter:description'].includes(nombre) && a.content && !metas[nombre]) {
+      metas[nombre] = decodificar(a.content);
+    }
   }
+  const descripcion = metas.description || metas['og:description'] || metas['twitter:description'] || null;
 
   const formularios = [];
   for (const m of html.matchAll(/<form\b([^>]*)>([\s\S]*?)(?:<\/form>|$)/gi)) {
@@ -233,6 +240,8 @@ export function analizarHtml(html, urlBase) {
 
   return {
     titulo: titulo ? decodificar(titulo[1]).slice(0, 200) || null : null,
+    nombreSitio: metas['og:site_name']?.slice(0, 80) || null,
+    descripcion: descripcion ? (descripcion.length > 280 ? `${descripcion.slice(0, 277).trimEnd()}…` : descripcion) : null,
     metaRefresh,
     redireccionJs: /\b(?:window|document|top|self)?\.?location(?:\.href)?\s*=(?!=)|location\.(?:replace|assign)\s*\(/i.test(html),
     formularios: formularios.length,

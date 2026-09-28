@@ -123,6 +123,30 @@ import Layout from '../layouts/Layout.astro';
     }
     .informe-enlace strong { font-size: 1.05rem; }
     .informe-enlace span { font-size: 0.8rem; color: #94a3b8; }
+    .sitio { margin: 0 0 1.25rem; }
+    .sitio h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 0 0 0.5rem; }
+    .sitio-dice { margin: 0 0 0.6rem; font-size: 0.9rem; line-height: 1.45; font-style: italic; color: #e2e8f0; }
+    .sitio-fuente { font-style: normal; color: #94a3b8; }
+    .sitio-conclusion { margin: 0; display: flex; gap: 0.6rem; align-items: flex-start; font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
+    .sitio-coherente .senal-icono { background: #2ecc71; }
+    .sitio-dudoso .senal-icono { background: #f39c12; }
+    .sitio-no-cuadra .senal-icono { background: #ff4d4d; }
+    .sitio-sin-datos .senal-icono { background: #94a3b8; }
+    .sitio-puntos { margin: 0.4rem 0 0 2.1rem; padding: 0; list-style: none; display: grid; gap: 0.25rem; }
+    .sitio-puntos li { font-size: 0.85rem; color: #cbd5e1; line-height: 1.4; }
+    .sitio-puntos li::before { margin-right: 0.35rem; font-weight: 700; }
+    .punto-bien::before { content: '✓'; color: #2ecc71; }
+    .punto-alerta::before { content: '!'; color: #f39c12; }
+    .punto-peligro::before { content: '✕'; color: #ff4d4d; }
+    .punto-info::before { content: '·'; color: #94a3b8; }
+    .sitio-categorias { margin: 0.5rem 0 0 2.1rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .etiqueta {
+        font-size: 0.72rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.15);
+        color: #cbd5e1;
+    }
     .informe-motivo { margin: 1rem 0; line-height: 1.5; }
 
     .ficha {

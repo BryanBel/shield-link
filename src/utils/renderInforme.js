@@ -228,6 +228,7 @@ function tecnico(d) {
     bloque('Reputación', [...filasReputacion(d.reputacion), ...filasReputacion(d.reputacionDestino, 'Destino · ')]),
     bloque('Página', d.pagina ? [
       ['Título', d.pagina.titulo],
+      ['Nombre del sitio', d.pagina.nombreSitio],
       ['Formularios', d.pagina.formularios ? `${d.pagina.formularios} (${d.pagina.formulariosConClave} piden contraseña)` : 'Ninguno'],
       ['Envía contraseñas a', d.pagina.destinosDeClave],
       ['Iframes', d.pagina.iframes || null],
@@ -246,6 +247,38 @@ function enlace(url) {
   const host = url ? hostDe(url) : null;
   if (!host) return null;
   return el('p', { class: 'informe-enlace' }, el('strong', {}, host), el('span', {}, url));
+}
+
+const ICONO_CONCLUSION = { coherente: '✓', dudoso: '!', 'no-cuadra': '✕', 'sin-datos': 'i' };
+
+/**
+ * What the site says it is, and whether that holds up. The description is the site's own
+ * text — on a phishing page, the attacker's — so it is quoted as a claim, and the server's
+ * contrast against independent evidence (who owns the domain, how vendors classify it, how
+ * old it is) says whether to believe it.
+ */
+function queEs(res) {
+  const s = res.sitio;
+  if (!s || (!s.dice && !s.titulo && !s.puntos.length && !s.categorias.length)) return null;
+
+  return el(
+    'section',
+    { class: 'sitio', 'aria-label': 'Qué es este sitio' },
+    el('h3', {}, 'Qué es este sitio'),
+    s.dice
+      ? el('p', { class: 'sitio-dice' }, el('span', { class: 'sitio-fuente' }, `Según ${s.nombre ? `${s.nombre}, ` : 'la propia página, '}`), `“${s.dice}”`)
+      : s.titulo
+        ? el('p', { class: 'sitio-dice' }, el('span', { class: 'sitio-fuente' }, 'Se presenta como '), `“${s.titulo}”`)
+        : null,
+    el(
+      'p',
+      { class: `sitio-conclusion sitio-${s.estado}` },
+      el('span', { class: 'senal-icono', 'aria-hidden': 'true' }, ICONO_CONCLUSION[s.estado]),
+      s.conclusion,
+    ),
+    s.puntos.length ? el('ul', { class: 'sitio-puntos' }, s.puntos.map((p) => el('li', { class: `punto-${p.tipo}` }, p.texto))) : null,
+    s.categorias.length ? el('p', { class: 'sitio-categorias' }, s.categorias.map((c) => el('span', { class: 'etiqueta' }, c))) : null,
+  );
 }
 
 function nota(res) {
@@ -267,7 +300,7 @@ export function renderInforme(res) {
 
   // Two groups: what you read first (verdict, link, reason, the facts) and what you open
   // if you want more. On a wide screen they sit side by side so the card fits the window.
-  const extra = [porQue(senales), completo ? tecnico(res.detalles) : null].filter(Boolean);
+  const extra = [queEs(res), porQue(senales), completo ? tecnico(res.detalles) : null].filter(Boolean);
 
   return el(
     'article',

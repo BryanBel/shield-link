@@ -79,6 +79,21 @@ la página lo dice con palabras en vez de dar a entender más de lo que sabe.
 }
 ```
 
+### Lo que dice el sitio, y si es cierto
+
+El informe cita cómo se describe el sitio —su meta descripción, o su título— y después
+contrasta esa afirmación con evidencia que el sitio no controla: si la marca con la que se
+presenta es de verdad dueña del dominio, si lo que dice hacer coincide con cómo lo
+clasifican las empresas de seguridad, y cuánto tiempo tiene el dominio. La conclusión es
+una de *cuadra*, *dudoso*, *no cuadra* o *sin evidencia suficiente*, con los puntos que la
+sostienen.
+
+Son reglas fijas, no un modelo de lenguaje. En una página de phishing la descripción es
+texto del atacante, y un modelo que la lea puede ser convencido de repetirla; una regla no.
+Una página que se presenta como una marca que no es, o una empresa de seguridad que
+clasifica el sitio como phishing, también levantan una alerta en el veredicto, así que la
+conclusión y el veredicto nunca se contradicen.
+
 ### Visitar un enlace sin que te use
 
 Un servidor que descarga una URL elegida por otro puede terminar apuntándose a sí mismo:
