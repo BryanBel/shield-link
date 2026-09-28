@@ -1,30 +1,26 @@
+import { normalizarEntrada } from './normalizarEntrada.js';
+
 /**
  * Browser-side entry point for a scan.
  *
- * Every decision now happens in /api/scan on the server. This module only does the one
- * check worth doing locally — whether the string even looks like a URL — so an obvious
- * typo gets instant feedback instead of a network round trip. The server revalidates it
- * regardless.
+ * Every decision happens in /api/scan on the server. This module only does the one check
+ * worth doing locally — whether the text can be a web link at all — so an obvious typo
+ * gets instant feedback instead of a network round trip. The server revalidates it
+ * regardless, with the same rules.
  *
  * Earlier versions ran the whole cascade here, which meant the browser held a Supabase
  * key and wrote to the reputation tables directly. Anyone could then insert a malicious
  * URL into lista_blanca and have the scanner vouch for it.
  */
-export async function analizarSeguridad(url) {
-  const limpia = url.trim();
-
-  if (!limpia.startsWith('http://') && !limpia.startsWith('https://')) {
-    return {
-      error: true,
-      motivo: 'Formato no válido. Asegúrate de incluir http:// o https:// (Ej: https://google.com)',
-    };
-  }
+export async function analizarSeguridad(texto) {
+  const entrada = normalizarEntrada(texto);
+  if (entrada.error) return { error: true, motivo: entrada.error };
 
   try {
     const response = await fetch('/api/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: limpia }),
+      body: JSON.stringify({ url: texto.trim() }),
     });
 
     const result = await response.json();

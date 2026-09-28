@@ -30,6 +30,11 @@ Cuando un enlace termina en otro dominio —un acortador, una redirección— el
 que el usuario va a ver de verdad, así que recibe su propia revisión de reputación y de
 registro.
 
+Un dominio suelto sirve igual que una URL completa: `google.com` se analiza como
+`https://google.com`, el esquema que los navegadores prueban primero, y el informe avisa que
+se asumió. Lo que no es un enlace web —`javascript:`, `data:`, `mailto:`, un correo pegado
+por error— se rechaza antes de hacer cualquier trabajo.
+
 Cada señal es a favor, un dato, una alerta o un peligro, y el veredicto las sigue:
 
 - **Cualquier peligro → `peligroso`.** Tres motores o más; un dominio registrado hace días;

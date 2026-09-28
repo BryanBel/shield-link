@@ -28,6 +28,11 @@ reasons.
 When a link lands on a different domain — a shortener, a redirect — the destination is what
 the user will actually see, so it gets its own reputation and registration check.
 
+A bare domain works as well as a full URL: `google.com` is analysed as `https://google.com`,
+the scheme browsers try first, and the report says it was assumed. Anything that is not a
+web link — `javascript:`, `data:`, `mailto:`, an email address pasted by mistake — is
+refused before any work happens.
+
 Every signal is good news, neutral, a warning or a danger, and the verdict follows them:
 
 - **Any danger → `peligroso`.** Three or more engines; a domain registered days ago; a

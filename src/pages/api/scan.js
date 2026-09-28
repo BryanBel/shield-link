@@ -9,6 +9,7 @@ import { rdapDominio, rdapIp } from '../../utils/analisis/rdap.server.js';
 import { generarSenales } from '../../utils/analisis/senales.js';
 import { decidirVeredicto } from '../../utils/analisis/veredicto.js';
 import { consultarVirusTotal } from '../../utils/analisis/virusTotal.server.js';
+import { normalizarEntrada } from '../../utils/normalizarEntrada.js';
 
 /**
  * Astro's default output is static. Without this line the route is built as a plain
@@ -143,36 +144,22 @@ export const POST = async (context) => {
 
   const raw = typeof payload?.url === 'string' ? payload.url.trim() : '';
 
-  if (!raw) {
-    return json({ error: true, motivo: 'Falta el enlace a analizar.' }, 400);
-  }
-
   if (raw.length > MAX_URL_LENGTH) {
     return json({ error: true, motivo: 'El enlace es demasiado largo para analizarlo.' }, 400);
   }
 
-  // The client validates the format too, for instant feedback, but that check is a
-  // convenience and not a guarantee — anything reaching this endpoint is revalidated.
-  // The URL is parsed as typed. The parser already lowercases the scheme and the host,
-  // the only parts that are case-insensitive; the path and query are not. Lowercasing the
-  // whole string, as this used to, made bit.ly/AbC and bit.ly/abc one cache entry — so a
-  // harmless short link, once cleared, vouched for a different one that pointed anywhere.
-  let urlObj;
-  try {
-    urlObj = new URL(raw);
-  } catch {
-    return json({ error: true, motivo: 'URL no válida. Revisa la ortografía del enlace.' }, 400);
+  // The page validates too, for instant feedback, but that check is a convenience and not
+  // a guarantee — anything reaching this endpoint is revalidated. A missing scheme is
+  // taken as https. The URL is otherwise parsed as typed: the parser lowercases the scheme
+  // and the host, the only parts that are case-insensitive. Lowercasing the whole string,
+  // as this used to, made bit.ly/AbC and bit.ly/abc one cache entry — so a harmless short
+  // link, once cleared, vouched for a different one that pointed anywhere.
+  const entrada = normalizarEntrada(raw);
+  if (entrada.error) {
+    return json({ error: true, motivo: entrada.error }, 400);
   }
-
-  if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
-    return json(
-      {
-        error: true,
-        motivo: 'Formato no válido. Asegúrate de incluir http:// o https:// (Ej: https://google.com)',
-      },
-      400,
-    );
-  }
+  const urlObj = entrada.url;
+  const conEsquema = (informe) => (entrada.esquemaAsumido ? { ...informe, esquemaAsumido: true } : informe);
 
   // The fragment never reaches the server the link points to, so it cannot change what the
   // link does; dropping it keeps page.html#a and page.html#b from being scanned twice.
@@ -194,7 +181,7 @@ export const POST = async (context) => {
   if (sql) {
     try {
       const guardado = await leerAnalisis(sql, hash);
-      if (guardado) return json(guardado);
+      if (guardado) return json(conEsquema(guardado));
     } catch (error) {
       console.error('[scan] lectura de caché falló:', error.message);
     }
@@ -244,5 +231,5 @@ export const POST = async (context) => {
     }
   }
 
-  return json(informe);
+  return json(conEsquema(informe));
 };

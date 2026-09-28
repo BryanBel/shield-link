@@ -8,7 +8,7 @@ import Layout from '../layouts/Layout.astro';
         <p>Análisis instantáneo de enlaces sospechosos</p>
 
         <div id="inputContainer" class="scanner-card">
-            <input type="text" id="linkInput" placeholder="https://ejemplo-sospechoso.com" aria-label="Enlace a analizar" />
+            <input type="text" id="linkInput" placeholder="ejemplo-sospechoso.com o https://…" aria-label="Enlace a analizar" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" />
             <button id="scanBtn" type="button">Analizar Ahora</button>
         </div>
 

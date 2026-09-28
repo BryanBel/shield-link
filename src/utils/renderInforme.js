@@ -251,6 +251,7 @@ function enlace(url) {
 function nota(res) {
   const v = res.detalles?.visita;
   const partes = [];
+  if (res.esquemaAsumido) partes.push('El enlace no traía http:// ni https://, así que se analizó con https://.');
   if (v?.prudente) partes.push('El enlace parecía de un solo uso, así que solo se revisó su servidor, sin abrir la página.');
   else if (v?.visitado) partes.push('Shield Link visitó el enlace desde sus servidores, sin tus datos ni cookies, y sin ejecutar su código.');
   else if (v?.bloqueado || v?.error) partes.push(`No se visitó el enlace: ${v.bloqueado ?? v.error}.`);
@@ -299,7 +300,7 @@ export function renderAviso(res) {
       'header',
       { class: 'informe-cabecera' },
       el('span', { class: 'informe-icono', 'aria-hidden': 'true' }, res.limite ? '⏳' : 'ℹ️'),
-      el('div', {}, el('h2', {}, res.limite ? 'Límite alcanzado' : 'Formato incorrecto')),
+      el('div', {}, el('h2', {}, res.limite ? 'Límite alcanzado' : 'Revisa el enlace')),
     ),
     el('p', { class: 'informe-motivo' }, res.motivo),
     el('button', { class: 'secondary-btn', id: 'resetBtn', type: 'button' }, res.limite ? 'Volver' : 'Corregir enlace'),
