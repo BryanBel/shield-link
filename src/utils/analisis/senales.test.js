@@ -31,6 +31,7 @@ const analizar = (entrada) => {
   const senales = generarSenales({ ahora: AHORA, ...entrada });
   return { senales, ...decidirVeredicto(senales, { vt: entrada.vt }) };
 };
+// Tests that do not pass a rank run with Tranco unavailable, as if it had failed.
 
 describe('generarSenales + decidirVeredicto', () => {
   it('an old, clean, encrypted site is safe with high certainty', () => {
@@ -40,9 +41,59 @@ describe('generarSenales + decidirVeredicto', () => {
     assert.ok(ids(r.senales).includes('vt-limpio'));
     assert.ok(ids(r.senales).includes('dominio-antiguo'));
     assert.ok(ids(r.senales).includes('certificado-valido'));
-    assert.match(r.motivo, /^Seguro, certeza alta: ninguno de los 92 motores/);
+    assert.equal(r.recomendacion, 'Puedes abrirlo');
+    assert.match(r.motivo, /^Ninguno de los 92 motores/);
     // Brand-like first words keep their capitals when quoted as a clause.
     assert.match(r.motivo, /, VirusTotal lo conoce desde/);
+  });
+
+  const vtDosListas = {
+    ...vtLimpio, maliciosos: 2, primerEnvio: haceDias(6000), limpiosDestacados: ['Kaspersky', 'ESET'],
+    detecciones: [
+      { motor: '0xSI_f33d', categoria: 'malicious', resultado: 'phishing', metodo: 'blacklist' },
+      { motor: 'Fortra', categoria: 'malicious', resultado: 'phishing', metodo: 'blacklist' },
+    ],
+  };
+  const rdapGoogle = { disponible: true, creado: haceDias(10600), registrador: 'MarkMonitor Inc.' };
+  const visitaA = (url) => {
+    const u = new URL(url);
+    return red({ urlFinal: `${u.origin}${u.pathname}`, saltos: [{ url: `${u.origin}${u.pathname}`, estado: 200, host: u.hostname, https: true }], pagina: { ...red().pagina, titulo: null } });
+  };
+
+  it('the most visited site flagged by two blocklists is safe, and the detections are explained as a false positive', () => {
+    const r = analizar({ url: new URL('https://google.com/'), vt: vtDosListas, red: visitaA('https://google.com/'), rdap: rdapGoogle, tranco: { disponible: true, rank: 1 } });
+    assert.equal(r.nivel, 'seguro');
+    assert.equal(r.certeza, 'media');
+    assert.ok(ids(r.senales).includes('vt-falso-positivo'));
+    assert.ok(ids(r.senales).includes('popular'));
+    assert.match(r.motivo, /^google\.com es el sitio más visitado del mundo/);
+    assert.match(r.motivo, /Las 2 detecciones son casi seguro un falso positivo\./);
+  });
+
+  it('the same detections on an open platform are not excused by the platform\'s fame', () => {
+    const r = analizar({ url: new URL('https://sites.google.com/view/banco-acceso'), vt: vtDosListas, red: visitaA('https://sites.google.com/view/banco-acceso'), rdap: rdapGoogle, tranco: { disponible: true, rank: 1 } });
+    assert.equal(r.nivel, 'precaucion');
+    assert.ok(ids(r.senales).includes('vt-minoritario'));
+    assert.ok(ids(r.senales).includes('plataforma-abierta'));
+    assert.ok(!ids(r.senales).includes('popular'));
+    assert.ok(!ids(r.senales).includes('dominio-antiguo'));
+    assert.ok(ids(r.senales).includes('dominio-plataforma'));
+  });
+
+  it('a lone predictive detection is named for what it is, in the singular', () => {
+    const vtPrediccion = {
+      ...vtLimpio, total: 98, maliciosos: 1, primerEnvio: haceDias(200),
+      detecciones: [{ motor: 'Bfore.Ai PreCrime', categoria: 'malicious', resultado: 'malicious', metodo: 'blacklist' }],
+    };
+    const r = analizar({ url: new URL('https://darwinlozada.com/'), vt: vtPrediccion, red: visitaA('https://darwinlozada.com/'), rdap: { disponible: true, creado: haceDias(300) }, tranco: { disponible: true, rank: null } });
+    assert.equal(r.nivel, 'precaucion');
+    assert.equal(r.motivo, 'Bfore.Ai PreCrime lo marca como posible riesgo futuro (1 de 98 motores).');
+  });
+
+  it('two detections on an unknown site stay a warning', () => {
+    const r = analizar({ url: new URL('https://tienda-rara.com/'), vt: vtDosListas, red: visitaA('https://tienda-rara.com/'), rdap: { disponible: true, creado: haceDias(200) }, tranco: { disponible: true, rank: null } });
+    assert.equal(r.nivel, 'precaucion');
+    assert.ok(ids(r.senales).includes('vt-minoritario'));
   });
 
   it('a site VirusTotal has never seen is safe with low certainty, and says so', () => {

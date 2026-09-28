@@ -7,6 +7,8 @@
  * community, and a link can carry a token. It only reads what VirusTotal already has.
  */
 
+import { MOTORES_DESTACADOS } from './datos.js';
+
 const TIEMPO_MS = 5000;
 
 /**
@@ -91,10 +93,16 @@ export async function consultarVirusTotal(url) {
     // An earlier version read stats.phishing, which does not exist, so the engine count
     // rendered as "NaN motores" on every malicious verdict.
     const total = Object.values(stats).reduce((suma, n) => suma + (n ?? 0), 0);
-    const detecciones = Object.values(a.last_analysis_results ?? {})
+    const resultados = Object.values(a.last_analysis_results ?? {});
+    // `method` says how the engine reached its verdict: "blacklist" means the URL is on its
+    // list — reported by someone — not that it analysed the page.
+    const detecciones = resultados
       .filter((r) => r.category === 'malicious' || r.category === 'suspicious')
-      .map((r) => ({ motor: r.engine_name, categoria: r.category, resultado: r.result }))
+      .map((r) => ({ motor: r.engine_name, categoria: r.category, resultado: r.result, metodo: r.method ?? null }))
       .sort((x, y) => (x.categoria === y.categoria ? x.motor.localeCompare(y.motor) : x.categoria === 'malicious' ? -1 : 1));
+    const limpiosDestacados = MOTORES_DESTACADOS.filter((nombre) =>
+      resultados.some((r) => r.engine_name.toLowerCase() === nombre.toLowerCase() && r.category === 'harmless'),
+    );
 
     return {
       estado: 'conocido',
@@ -103,6 +111,7 @@ export async function consultarVirusTotal(url) {
       inofensivos: stats.harmless ?? 0,
       total,
       detecciones,
+      limpiosDestacados,
       categorias: limpiarCategorias(Object.values(a.categories ?? {})),
       reputacion: a.reputation ?? 0,
       votos: { inofensivo: a.total_votes?.harmless ?? 0, malicioso: a.total_votes?.malicious ?? 0 },

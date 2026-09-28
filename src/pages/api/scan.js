@@ -4,6 +4,8 @@ import { getSql } from '../../utils/db.server.js';
 import { guardarAnalisis, hashUrl, leerAnalisis } from '../../utils/analisis/cache.server.js';
 import { contrastar } from '../../utils/analisis/contraste.js';
 import { TLDS_PELIGROSOS } from '../../utils/analisis/datos.js';
+import { interpretarDetecciones } from '../../utils/analisis/detecciones.js';
+import { rankTranco } from '../../utils/analisis/tranco.server.js';
 import { investigar } from '../../utils/analisis/investigar.server.js';
 import { consumirCupo } from '../../utils/analisis/limite.server.js';
 import { rdapDominio, rdapIp } from '../../utils/analisis/rdap.server.js';
@@ -47,32 +49,50 @@ async function analizar(url) {
   // sources still run, so the report explains more than the extension.
   const riesgo = tldDeRiesgo(url.hostname);
 
-  const [rVt, rRed, rRdap] = await Promise.allSettled([
+  const [rVt, rRed, rRdap, rTranco] = await Promise.allSettled([
     riesgo ? null : consultarVirusTotal(url.href),
     investigar(url.href).then(async (red) => ({ ...red, registroIp: red.ip ? await rdapIp(red.ip) : null })),
     dominio ? rdapDominio(dominio) : null,
+    dominio ? rankTranco(dominio) : null,
   ]);
   const vt = valor(rVt);
   const red = valor(rRed);
   const rdap = valor(rRdap);
+  let tranco = valor(rTranco);
 
   const final = red?.urlFinal ?? (vt?.estado === 'conocido' ? vt.urlFinal : null);
   const hostFinal = final ? new URL(final).hostname : null;
   const dominioFinal = hostFinal ? getDomain(hostFinal) : null;
 
+  const otroDestino = Boolean(dominioFinal && dominio && dominioFinal !== dominio);
   let vtDestino = null;
   let rdapDestino = null;
-  if (dominio && dominioFinal && dominioFinal !== dominio) {
-    [vtDestino, rdapDestino] = (
-      await Promise.allSettled([tldDeRiesgo(hostFinal) ? null : consultarVirusTotal(final), rdapDominio(dominioFinal)])
+  if (otroDestino) {
+    // Popularity is about the page the user lands on, so the destination's rank replaces
+    // the shortener's.
+    [vtDestino, rdapDestino, tranco] = (
+      await Promise.allSettled([tldDeRiesgo(hostFinal) ? null : consultarVirusTotal(final), rdapDominio(dominioFinal), rankTranco(dominioFinal)])
     ).map(valor);
   }
 
-  const senales = generarSenales({ url, vt, vtDestino, red, rdap, rdapDestino });
-  const { nivel, certeza, motivo } = decidirVeredicto(senales, { vt });
+  const senales = generarSenales({ url, vt, vtDestino, red, rdap, rdapDestino, tranco });
+  const { nivel, certeza, recomendacion, motivo } = decidirVeredicto(senales, { vt });
+
+  // Why engines flag it, in words — for the page the user lands on.
+  const diasDe = (registro, v) => {
+    const desde = registro?.creado ?? v?.primerEnvio;
+    return desde ? Math.floor((Date.now() - new Date(desde)) / 86_400_000) : null;
+  };
+  const deteccionesPagina = otroDestino && vtDestino?.detecciones?.length ? vtDestino : vt;
+  const detecciones = interpretarDetecciones({
+    vt: deteccionesPagina,
+    host: deteccionesPagina === vtDestino ? hostFinal : url.hostname,
+    dominio: deteccionesPagina === vtDestino ? dominioFinal : dominio,
+    rank: deteccionesPagina === vtDestino || !otroDestino ? (tranco?.rank ?? null) : null,
+    diasDominio: deteccionesPagina === vtDestino ? diasDe(rdapDestino, vtDestino) : diasDe(rdap, vt),
+  });
 
   // The page that was read is the final one, so it is judged against the final domain.
-  const otroDestino = Boolean(dominioFinal && dominio && dominioFinal !== dominio);
   const sitio = contrastar({
     dominio: dominioFinal ?? dominio,
     pagina: red?.pagina ?? null,
@@ -102,11 +122,14 @@ async function analizar(url) {
     nivel,
     seguro: nivel === 'seguro',
     certeza,
+    recomendacion,
     motivo,
     sitio,
+    detecciones,
     senales,
     detalles: {
       url: sinQuery(url),
+      popularidad: tranco?.disponible ? { dominio: otroDestino ? dominioFinal : dominio, rank: tranco.rank, fecha: tranco.fecha } : null,
       dominio: dominio
         ? {
             nombre: dominio,

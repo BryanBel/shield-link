@@ -16,6 +16,37 @@ export const ACORTADORES = new Set([
 ]);
 
 /**
+ * Hosts where anyone can publish a page. Their domain is popular and old, but that says
+ * nothing about a page someone uploaded yesterday — and phishing kits live on exactly these.
+ * A host matches an entry if it is the entry or a subdomain of it.
+ */
+export const PLATAFORMAS_ABIERTAS = [
+  'sites.google.com', 'docs.google.com', 'drive.google.com', 'forms.gle', 'storage.googleapis.com',
+  'firebasestorage.googleapis.com', 'web.app', 'firebaseapp.com', 'github.io', 'githubusercontent.com',
+  'vercel.app', 'netlify.app', 'pages.dev', 'workers.dev', 'r2.dev', 'blogspot.com', 'wixsite.com',
+  'weebly.com', 'webflow.io', 'glitch.me', 'herokuapp.com', 'onrender.com', '000webhostapp.com',
+  'azurewebsites.net', 's3.amazonaws.com', 'notion.site', 'canva.site', 'my.canva.site',
+  'forms.office.com', 'sharepoint.com', '1drv.ms', 'dropbox.com', 'myshopify.com', 'linktr.ee',
+  'wordpress.com', 'godaddysites.com', 'square.site', 'jimdosite.com', 'carrd.co', 'replit.app',
+];
+
+/**
+ * Well-known engines, named when they call a flagged URL clean: "90 others, Kaspersky and
+ * ESET among them" says more than a bare count.
+ */
+export const MOTORES_DESTACADOS = ['Kaspersky', 'ESET', 'BitDefender', 'Sophos', 'Fortinet', 'PhishTank', 'OpenPhish', 'URLhaus', 'Webroot', 'Trustwave'];
+
+/**
+ * How particular engines work, so a lone detection can be read in context. Only engines
+ * whose method is documented by their own vendor are described — the rest are shown with
+ * what they report, and nothing is guessed.
+ */
+export const NOTAS_MOTORES = {
+  'Bfore.Ai PreCrime':
+    'es un motor predictivo: señala dominios con patrones que podrían usarse en ataques, antes de que ocurra alguno. Es una predicción, no un ataque detectado.',
+};
+
+/**
  * Brands phishing most often impersonates, with the registrable domains that really belong
  * to them. `claves` are matched as whole words in a page title and as parts of a domain
  * name; a brand named on a domain it does not own is what the signals look for.

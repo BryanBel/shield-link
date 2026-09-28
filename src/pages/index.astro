@@ -18,6 +18,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
     import { analizarSeguridad } from '../utils/scanner.js';
+    import { normalizarEntrada } from '../utils/normalizarEntrada.js';
     import { renderAviso, renderInforme } from '../utils/renderInforme.js';
 
     const main = document.querySelector('main') as HTMLElement;
@@ -45,8 +46,10 @@ import Layout from '../layouts/Layout.astro';
 
         const res = await analizarSeguridad(url);
 
-        // Los datos del informe se insertan como texto, nunca como HTML.
-        resultDiv.replaceChildren(res.error ? renderAviso(res) : renderInforme(res));
+        // El botón de abrir usa el enlace tal como se escribió (con su query), no la versión
+        // recortada del informe. Los datos del informe se insertan como texto, nunca como HTML.
+        const urlAbrir = normalizarEntrada(url).url?.href ?? null;
+        resultDiv.replaceChildren(res.error ? renderAviso(res) : renderInforme(res, { urlAbrir }));
         main.classList.toggle('con-resultado', !res.error);
         resultDiv.focus();
 
@@ -123,8 +126,54 @@ import Layout from '../layouts/Layout.astro';
     }
     .informe-enlace strong { font-size: 1.05rem; }
     .informe-enlace span { font-size: 0.8rem; color: #94a3b8; }
-    .sitio { margin: 0 0 1.25rem; }
-    .sitio h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 0 0 0.5rem; }
+    .acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
+    .acciones .secondary-btn { margin: 0; }
+    .boton-abrir {
+        width: auto;
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        border: 2px solid transparent;
+        cursor: pointer;
+    }
+    .boton-seguro { background: #16a34a; color: white; }
+    .boton-seguro:hover { background: #15803d; }
+    .boton-precaucion { background: #d97706; color: white; }
+    .boton-precaucion:hover { background: #b45309; }
+    /* Dangerous: deliberately the least inviting button on the card. */
+    .boton-peligroso { background: transparent; color: #fca5a5; border-color: #7f1d1d; }
+    .boton-peligroso:hover { background: rgba(127, 29, 29, 0.35); }
+    .boton-abrir:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .dialogo {
+        max-width: min(440px, calc(100vw - 2rem));
+        border: 1px solid #334155;
+        border-top: 4px solid var(--borde-nivel, #334155);
+        border-radius: 12px;
+        background: #1e293b;
+        color: #f8fafc;
+        padding: 1.25rem 1.4rem;
+        text-align: left;
+    }
+    .dialogo::backdrop { background: rgba(2, 6, 23, 0.7); }
+    .dialogo-seguro { --borde-nivel: #2ecc71; }
+    .dialogo-precaucion { --borde-nivel: #f39c12; }
+    .dialogo-peligroso { --borde-nivel: #ff4d4d; }
+    .dialogo h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+    .dialogo p { margin: 0.5rem 0; font-size: 0.9rem; line-height: 1.45; color: #cbd5e1; }
+    .dialogo-url { font-size: 0.8rem !important; color: #94a3b8 !important; overflow-wrap: anywhere; }
+    .dialogo-casilla { display: flex; gap: 0.5rem; align-items: center; margin: 0.9rem 0 0; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    .dialogo-casilla input { width: auto; margin: 0; }
+    .dialogo-acciones { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.1rem; }
+    .dialogo-acciones .secondary-btn { margin: 0; }
+
+    .sitio { margin: 1.25rem 0; }
+    .sitio h3,
+    .detecciones h3,
+    .hallazgos h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 0 0 0.5rem; }
+    .sitio-comprobacion { margin-top: 0.35rem; }
+    .sitio-comprobacion > summary { cursor: pointer; font-size: 0.8rem; color: #93c5fd; margin-left: 2.1rem; }
     .sitio-dice { margin: 0 0 0.6rem; font-size: 0.9rem; line-height: 1.45; font-style: italic; color: #e2e8f0; }
     .sitio-fuente { font-style: normal; color: #94a3b8; }
     .sitio-conclusion { margin: 0; display: flex; gap: 0.6rem; align-items: flex-start; font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
@@ -151,12 +200,9 @@ import Layout from '../layouts/Layout.astro';
 
     .ficha {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
         gap: 0.5rem;
-        margin: 0 0 1.25rem;
-    }
-    @media (min-width: 480px) {
-        .ficha { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        margin: 0;
     }
     .ficha-dato {
         margin: 0;
@@ -171,8 +217,25 @@ import Layout from '../layouts/Layout.astro';
     .ficha-alerta { --color-dato: #f39c12; }
     .ficha-peligro { --color-dato: #ff4d4d; }
 
-    .informe-porque h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 0 0 0.5rem; }
-    .informe-porque > .senales { margin-bottom: 0.5rem; }
+    .detecciones {
+        margin: 0 0 1.25rem;
+        padding: 0.8rem 0.9rem;
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.6);
+        border-left: 3px solid var(--color-deteccion, #94a3b8);
+    }
+    .detecciones-falso-positivo { --color-deteccion: #2ecc71; }
+    .detecciones-prediccion,
+    .detecciones-minoritaria,
+    .detecciones-plataforma { --color-deteccion: #f39c12; }
+    .detecciones-amenaza { --color-deteccion: #ff4d4d; }
+    .detecciones h3 { color: #e2e8f0; text-transform: none; letter-spacing: 0; font-size: 0.95rem; }
+    .detecciones p { margin: 0; font-size: 0.87rem; line-height: 1.5; color: #cbd5e1; }
+    .detecciones-motores { margin: 0.6rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.2rem; font-size: 0.8rem; color: #94a3b8; }
+    .detecciones-motores strong { color: #e2e8f0; }
+
+    .hallazgos { margin-bottom: 1.25rem; }
+    .hallazgos > .senales { margin-bottom: 0.5rem; }
     .senales-plegadas { margin-top: 0.4rem; }
     .senales-plegadas > summary {
         cursor: pointer;
@@ -208,7 +271,8 @@ import Layout from '../layouts/Layout.astro';
     .senal-bien .senal-icono { background: #2ecc71; }
     .senal-info .senal-icono { background: #94a3b8; }
 
-    .informe-tecnico { margin-top: 1.25rem; border: 1px solid #334155; border-radius: 8px; }
+    .informe-tecnico { border: 1px solid #334155; border-radius: 8px; }
+    .enlace-externo { color: #93c5fd; font-size: 0.85rem; font-weight: 600; justify-self: start; }
     .informe-tecnico > summary { cursor: pointer; font-weight: 600; padding: 0.6rem 0.8rem; }
     .tecnico-cuerpo { padding: 0 0.8rem 0.8rem; display: grid; gap: 1rem; }
     .tecnico-bloque h4 { margin: 0 0 0.4rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #93c5fd; }
@@ -235,7 +299,6 @@ import Layout from '../layouts/Layout.astro';
         padding: 10px 20px;
         border-radius: 6px;
     }
-    .informe:not(.informe-aviso) .secondary-btn { display: block; margin-left: auto; margin-right: auto; }
     .informe-extra { margin-top: 1.25rem; }
 
     /*
@@ -276,6 +339,5 @@ import Layout from '../layouts/Layout.astro';
             border-left: 1px solid #334155;
         }
         .con-resultado .informe-motivo { margin: 0.75rem 0; }
-        .con-resultado .ficha { margin-bottom: 0.75rem; }
     }
 </style>

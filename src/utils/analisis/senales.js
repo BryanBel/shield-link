@@ -2,7 +2,8 @@ import { domainToUnicode } from 'node:url';
 import { getDomain, getSubdomain } from 'tldts';
 
 import { marcaDeclarada, marcaEnTexto, RIESGOS } from './contraste.js';
-import { ACORTADORES, MARCAS, TLDS_PELIGROSOS } from './datos.js';
+import { ACORTADORES, MARCAS, PLATAFORMAS_ABIERTAS, TLDS_PELIGROSOS } from './datos.js';
+import { interpretarDetecciones, SITIO_POPULAR } from './detecciones.js';
 
 /**
  * Turns everything the sources found into signals: short, explained facts about the link,
@@ -60,7 +61,12 @@ const listar = (detecciones) =>
     .map((d) => `${d.motor} (${d.resultado ?? d.categoria})`)
     .join(', ') + (detecciones.length > 5 ? ` y ${detecciones.length - 5} más` : '');
 
-function senalesReputacion(vt, ahora, add, prefijo = '') {
+/**
+ * `lectura` is the interpretation from detecciones.js. It supplies the explanation, and
+ * decides the one case where a minority detection stops being a warning: a very popular,
+ * long-lived domain that is not an open publishing platform, flagged by one or two engines.
+ */
+function senalesReputacion(vt, ahora, add, prefijo = '', lectura = null) {
   if (!vt) return;
   if (vt.estado === 'desconocido') {
     if (!prefijo) add('vt-desconocido', 'info', 'VirusTotal no tiene análisis de este enlace', 'Nadie lo ha enviado a analizar todavía, así que el veredicto se apoya en las demás señales.');
@@ -73,11 +79,19 @@ function senalesReputacion(vt, ahora, add, prefijo = '') {
 
   const id = prefijo ? 'destino-' : 'vt-';
   const sujeto = prefijo ? `el destino (${prefijo})` : 'lo';
+  const falsoPositivo = !prefijo && lectura?.interpretacion === 'falso-positivo';
   if (vt.maliciosos >= 3) {
-    add(`${id}malicioso`, 'peligro', `${vt.maliciosos} de ${vt.total} motores de VirusTotal marcan ${prefijo ? sujeto : 'este enlace'} como malicioso`, `Detecciones: ${listar(vt.detecciones)}.`);
+    add(`${id}malicioso`, 'peligro', `${vt.maliciosos} de ${vt.total} motores de VirusTotal marcan ${prefijo ? sujeto : 'este enlace'} como malicioso`, lectura?.texto ?? `Detecciones: ${listar(vt.detecciones)}.`);
   } else if (vt.maliciosos > 0 || vt.sospechosos >= 2) {
     const n = vt.maliciosos + vt.sospechosos;
-    add(`${id}minoritario`, 'alerta', `${n} de ${vt.total} motores de VirusTotal ${prefijo ? `marcan ${sujeto}` : 'lo marcan'}`, `Una proporción tan baja suele ser un falso positivo, pero conviene revisarlo. Detecciones: ${listar(vt.detecciones)}.`);
+    const marcan = n === 1 ? 'marca' : 'marcan';
+    if (falsoPositivo) {
+      add('vt-falso-positivo', 'info', `${n} de ${vt.total} motores lo ${marcan}, casi seguro por error`, lectura.texto);
+    } else if (lectura?.interpretacion === 'prediccion') {
+      add(`${id}minoritario`, 'alerta', `${vt.detecciones.map((d) => d.motor).join(' y ')} ${prefijo ? `marca ${sujeto}` : 'lo marca'} como posible riesgo futuro (${n} de ${vt.total} motores)`, lectura.texto);
+    } else {
+      add(`${id}minoritario`, 'alerta', `${n} de ${vt.total} motores de VirusTotal ${prefijo ? `${marcan} ${sujeto}` : `lo ${marcan}`}`, lectura?.texto ?? `Una proporción tan baja suele ser un falso positivo, pero conviene revisarlo. Detecciones: ${listar(vt.detecciones)}.`);
+    }
   } else if (!prefijo) {
     const sospechoso = vt.sospechosos === 1 ? ' Uno solo lo considera sospechoso, lo que no alcanza para preocuparse.' : '';
     const cuando = vt.ultimoAnalisis ? ` Último análisis: ${fechaLarga(vt.ultimoAnalisis)}.` : '';
@@ -89,14 +103,14 @@ function senalesReputacion(vt, ahora, add, prefijo = '') {
     add('vt-comunidad', 'alerta', `La comunidad de VirusTotal lo vota como malicioso`, `${vt.votos.malicioso} votos maliciosos contra ${vt.votos.inofensivo} inofensivos.`);
   }
   const conocidoHace = diasDesde(vt.primerEnvio, ahora);
-  if (conocidoHace >= 365 && vt.maliciosos === 0) {
+  if (conocidoHace >= 365 && (vt.maliciosos === 0 || falsoPositivo)) {
     add('vt-antiguo', 'bien', `VirusTotal lo conoce desde ${new Date(vt.primerEnvio).getUTCFullYear()}`, 'Un enlace con años de historial y sin detecciones es difícil de falsificar.');
   }
   // Categories are not a signal: the card shows them where they belong, under "what this
   // site is".
 }
 
-function senalesDominio(rdap, dominio, ahora, add, prefijo = '') {
+function senalesDominio(rdap, dominio, ahora, add, prefijo = '', plataforma = null) {
   if (!dominio || !rdap) return;
   const quien = prefijo ? `El dominio de destino (${dominio})` : 'Dominio';
   const id = prefijo ? 'destino-dominio' : 'dominio';
@@ -109,6 +123,8 @@ function senalesDominio(rdap, dominio, ahora, add, prefijo = '') {
   const registro = `Registrado el ${fechaLarga(rdap.creado)}${rdap.registrador ? ` a través de ${rdap.registrador}` : ''}.`;
   if (dias < 7) add(`${id}-nuevo`, 'peligro', titulo, `${registro} Los sitios de phishing usan dominios de días de vida; uno legítimo rara vez es tan nuevo.`);
   else if (dias < 30) add(`${id}-nuevo`, 'alerta', titulo, `${registro} Un dominio de semanas merece desconfianza, sobre todo si pide datos.`);
+  // On an open platform the domain's age belongs to the platform, not to the page.
+  else if (!prefijo && plataforma && dias >= 365) add('dominio-plataforma', 'info', `La plataforma ${plataforma} existe hace ${edad(dias)}`, 'Esa antigüedad es de la plataforma, no de esta página: cualquiera pudo publicarla ayer.');
   else if (!prefijo && dias >= 365) add('dominio-antiguo', 'bien', titulo, registro);
   else if (!prefijo) add('dominio-reciente', 'info', titulo, registro);
 
@@ -228,7 +244,25 @@ function senalesVisita(red, add) {
   if (red.prudente) add('modo-prudente', 'info', 'Solo se revisó el servidor, no la página', 'El enlace parece de un solo uso (restablecer contraseña, confirmar, desuscribir). Abrirlo podría activarlo, así que Shield Link no lo cargó.');
 }
 
-export function generarSenales({ url, vt = null, vtDestino = null, red = null, rdap = null, rdapDestino = null, ahora = new Date() }) {
+/**
+ * Popularity from the Tranco ranking. Only the top ten thousand counts in the link's
+ * favour; a rank does not vouch for a page on an open platform, where the fame belongs to
+ * the platform. Not being ranked says nothing either way — most legitimate sites are not.
+ */
+function senalesPopularidad(tranco, dominio, plataforma, add) {
+  if (plataforma) {
+    add('plataforma-abierta', 'info', `Publicado en ${plataforma}, donde cualquiera puede publicar`, `${dominio} es conocido, pero su fama no respalda esta página: la pudo subir cualquiera. Lo que importa es quién la hizo.`);
+    return;
+  }
+  const rank = tranco?.disponible ? tranco.rank : null;
+  if (!rank) return;
+  const puesto = rank.toLocaleString('es');
+  if (rank === 1) add('popular', 'bien', `${dominio} es el sitio más visitado del mundo`, 'Según el ranking Tranco, que combina varias fuentes de tráfico y resiste manipulaciones.');
+  else if (rank <= SITIO_POPULAR) add('popular', 'bien', `${dominio} está entre los sitios más visitados del mundo (#${puesto})`, 'Según el ranking Tranco, que combina varias fuentes de tráfico y resiste manipulaciones.');
+  else if (rank <= 100_000) add('conocido', 'info', `${dominio} es un sitio conocido: puesto #${puesto} en el mundo`, 'Está entre los 100.000 sitios más visitados según el ranking Tranco.');
+}
+
+export function generarSenales({ url, vt = null, vtDestino = null, red = null, rdap = null, rdapDestino = null, tranco = null, ahora = new Date() }) {
   const senales = [];
   const vistos = new Set();
   const add = (id, tipo, titulo, detalle) => {
@@ -240,13 +274,25 @@ export function generarSenales({ url, vt = null, vtDestino = null, red = null, r
   const dominio = getDomain(url.hostname);
   const hostFinal = red?.urlFinal ? hostDe(red.urlFinal) : vt?.urlFinal ? hostDe(vt.urlFinal) : null;
   const dominioFinal = hostFinal ? getDomain(hostFinal) : null;
+  const otroDestino = Boolean(dominioFinal && dominioFinal !== dominio);
 
-  senalesReputacion(vt, ahora, add);
-  if (dominioFinal && dominioFinal !== dominio) {
-    senalesReputacion(vtDestino, ahora, add, hostFinal);
+  // The page the user lands on decides popularity and whether it is an open platform.
+  const hostPagina = otroDestino ? hostFinal : url.hostname;
+  const plataforma = PLATAFORMAS_ABIERTAS.find((p) => hostPagina === p || hostPagina.endsWith(`.${p}`)) ?? null;
+  const edadDe = (registro, v) => (registro?.creado ? diasDesde(registro.creado, ahora) : v?.primerEnvio ? diasDesde(v.primerEnvio, ahora) : null);
+  const lectura = interpretarDetecciones({ vt, host: url.hostname, dominio, rank: otroDestino ? null : tranco?.rank ?? null, diasDominio: edadDe(rdap, vt) });
+  const lecturaDestino = otroDestino
+    ? interpretarDetecciones({ vt: vtDestino, host: hostFinal, dominio: dominioFinal, rank: tranco?.rank ?? null, diasDominio: edadDe(rdapDestino, vtDestino) })
+    : null;
+
+  // Popularity first: it is the context every other signal is read in.
+  senalesPopularidad(tranco, otroDestino ? dominioFinal : dominio, plataforma, add);
+  senalesReputacion(vt, ahora, add, '', lectura);
+  if (otroDestino) {
+    senalesReputacion(vtDestino, ahora, add, hostFinal, lecturaDestino);
     senalesDominio(rdapDestino, dominioFinal, ahora, add, 'destino');
   }
-  senalesDominio(rdap, dominio, ahora, add);
+  senalesDominio(rdap, dominio, ahora, add, '', otroDestino ? null : plataforma);
   senalesTransporte(url, red, ahora, add);
   senalesDestino(url, dominio, red, vt, vtDestino, add);
   senalesPagina(red, add);

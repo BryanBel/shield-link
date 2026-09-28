@@ -12,7 +12,14 @@ import { createHash } from 'node:crypto';
 
 const VIGENCIA = { seguro: '7 days', precaucion: '1 day', peligroso: '30 days' };
 
-export const hashUrl = (url) => createHash('sha256').update(url).digest('hex');
+/**
+ * Bump when the report's shape changes. The version is part of the key, so reports in an
+ * older shape are simply never read again — no manual purge, no half-rendered card from a
+ * stale entry — and the pruning in guardarAnalisis clears them out as they expire.
+ */
+const VERSION_INFORME = 4;
+
+export const hashUrl = (url) => createHash('sha256').update(`v${VERSION_INFORME}:${url}`).digest('hex');
 
 export async function leerAnalisis(sql, hash) {
   const [fila] = await sql`

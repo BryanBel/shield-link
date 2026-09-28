@@ -24,6 +24,7 @@ razones.
 | [VirusTotal API v3](https://www.virustotal.com) | La opinión de ~90 motores: cuáles marcaron el enlace y como qué, cómo clasifica la web ese sitio, desde cuándo lo conoce VirusTotal |
 | Una visita al enlace | Adónde lleva de verdad, salto por salto; su certificado TLS; y qué es la página —su título, si pide una contraseña y adónde la enviaría |
 | [RDAP](https://about.rdap.org), de los registros | Cuándo se registró el dominio y con quién; qué red es dueña de la IP del servidor |
+| [Tranco](https://tranco-list.eu) | Qué tan popular es el dominio entre el millón de sitios más visitados: la escala con la que se leen las detecciones |
 | La URL misma | Trucos en la dirección: una extensión de alto riesgo, imitaciones con punycode, una IP en vez de un nombre, texto antes de una `@`, el nombre de una marca en un dominio que no es suyo |
 
 Cuando un enlace termina en otro dominio —un acortador, una redirección— el destino es lo
@@ -48,34 +49,59 @@ Cada señal es a favor, un dato, una alerta o un peligro, y el veredicto las sig
   respalda.
 - **Si no → `seguro`.**
 
-### Tres veredictos, no dos
+La respuesta se da como se hace la pregunta: *Puedes abrirlo*, *Ábrelo con cuidado*, *No lo
+abras* —con un botón para abrir el sitio. Antes pide confirmación: una simple para un enlace
+seguro, una que repite la alerta principal para uno con precaución, y para uno peligroso un
+segundo paso, marcar "Entiendo el riesgo", antes de que se abra nada.
 
-VirusTotal agrega unos noventa motores de calidad muy despareja, y un puñado de
-detecciones sobre un dominio establecido suele ser ruido —`google.com` ha llegado a tener
-dos motores que lo marcaban como malicioso contra sesenta y uno que lo daban por limpio.
-Tratar "uno o más motores" como peligroso, que es lo que este proyecto hacía al principio,
-clasifica media web como amenaza y enseña al usuario a ignorar el aviso. Una o dos
-detecciones se reportan como lo que son: precaución, con los motores nombrados.
+### Darle sentido a una detección
+
+VirusTotal agrega unos noventa motores de calidad muy despareja. Tratar "uno o más motores"
+como peligroso, que es lo que este proyecto hacía al principio, clasifica media web como
+amenaza y enseña al usuario a ignorar el aviso. Por eso cada detección se explica, usando
+solo lo que se puede comprobar:
+
+- **Cómo decidió el motor.** VirusTotal reporta el método de cada uno. `blacklist` significa
+  que la URL está en la lista de ese motor: el veredicto sale de la lista, no de analizar el
+  sitio ahora.
+- **Quién no está de acuerdo.** "Los otros 90, entre ellos Kaspersky, ESET y BitDefender, no
+  lo marcan" dice más que un número.
+- **La escala.** Mientras se escribe esto, `google.com` aparece en dos listas negras. También
+  es el sitio más visitado del mundo y tiene 29 años: si fuera malicioso, lo marcaría la
+  mayoría de los motores, no 2 de 92. Un dominio dentro del top 10.000 de Tranco, con al
+  menos cinco años, marcado por uno o dos motores, se considera seguro —con las detecciones a
+  la vista y explicadas como un falso positivo casi seguro.
+- **Salvo en plataformas abiertas.** `sites.google.com`, `*.github.io`, `*.vercel.app`, los
+  formularios de Google Docs y similares son populares porque cualquiera publica en ellos, y
+  los kits de phishing también. Su fama no respalda nada, así que ahí las detecciones
+  mantienen su peso.
+- **Qué es el motor,** solo cuando su propio fabricante lo documenta. Bfore.Ai PreCrime, por
+  ejemplo, es predictivo: señala dominios con patrones que podrían usarse en ataques antes de
+  que ocurra alguno. Una detección suya, sola, se reporta como una predicción, no como un
+  ataque detectado.
 
 ### Qué tan seguro está
 
 Cada veredicto trae una certeza. Un enlace seguro que VirusTotal analizó y encontró limpio,
 en un dominio de más de un año, con certificado válido, es de certeza *alta*. Uno seguro
 que VirusTotal nunca vio es de certeza *baja* —nadie lo reportó, pero nada lo respalda— y
-la página lo dice con palabras en vez de dar a entender más de lo que sabe.
+la página lo dice con palabras en vez de dar a entender más de lo que sabe. Un veredicto que
+tuvo que explicar detecciones nunca pasa de certeza *media*.
 
 ```jsonc
-// POST /api/scan { "url": "https://github.com" } — resumido
+// POST /api/scan { "url": "google.com" } — resumido
 {
   "nivel": "seguro",
-  "certeza": "alta",
-  "motivo": "Seguro, certeza alta: ninguno de los 92 motores de VirusTotal lo marca, VirusTotal lo conoce desde 2011 y dominio registrado hace 18 años.",
-  "senales": [
-    { "tipo": "bien", "titulo": "Ninguno de los 92 motores de VirusTotal lo marca" },
-    { "tipo": "bien", "titulo": "Dominio registrado hace 18 años", "detalle": "Registrado el 9 de octubre de 2007 a través de MarkMonitor Inc." },
-    { "tipo": "bien", "titulo": "Certificado válido emitido por Sectigo Limited" }
-  ],
-  "detalles": { "destino": {}, "dominio": {}, "certificado": {}, "servidor": {}, "reputacion": {}, "pagina": {} }
+  "certeza": "media",
+  "recomendacion": "Puedes abrirlo",
+  "motivo": "google.com es el sitio más visitado del mundo, VirusTotal lo conoce desde 2011 y dominio registrado hace 29 años. Las 2 detecciones son casi seguro un falso positivo.",
+  "detecciones": {
+    "interpretacion": "falso-positivo",
+    "texto": "0xSI_f33d y Fortra lo tienen en su lista de phishing: ese veredicto sale de la lista, no de analizar el sitio ahora. Los otros 90, entre ellos Kaspersky, ESET y BitDefender, no lo marcan. …"
+  },
+  "sitio": { "estado": "coherente", "conclusion": "Lo que dice de sí mismo cuadra con la evidencia independiente." },
+  "senales": [{ "tipo": "bien", "titulo": "google.com es el sitio más visitado del mundo" }],
+  "detalles": { "popularidad": {}, "destino": {}, "dominio": {}, "certificado": {}, "servidor": {}, "reputacion": {}, "pagina": {} }
 }
 ```
 

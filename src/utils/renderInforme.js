@@ -1,23 +1,29 @@
 /**
  * Builds the result card in the browser.
  *
- * Layout, top to bottom: the verdict and which link it is about; one sentence of why; a
- * compact grid of the six facts that matter most; the warnings in full, with the good
- * news folded into a single line; and the technical detail behind one button.
+ * Organised around the question the user actually has — "can I open this?" — and around
+ * saying each thing once:
+ *
+ *   left   the answer in plain words, the link, one sentence of why, and a way to open it;
+ *          what the site is and whether that holds up; four facts at a glance.
+ *   right  why engines flag it, when they do; what counts against it; what counts in its
+ *          favour and the remaining facts, folded; the technical detail, folded.
  *
  * Everything is created with createElement and text nodes, never innerHTML. The report
- * carries text that ultimately came from somewhere else — a page title, a registrar's
- * name, an engine's label — and none of it may ever be interpreted as markup.
+ * carries text that ultimately came from somewhere else — a page title, a description, an
+ * engine's label — and none of it may ever be interpreted as markup.
  */
 
 const NIVELES = {
-  seguro: { clase: 'seguro', icono: '✅', titulo: 'Enlace seguro' },
-  precaucion: { clase: 'precaucion', icono: '⚠️', titulo: 'Requiere precaución' },
-  peligroso: { clase: 'peligroso', icono: '❌', titulo: 'Enlace peligroso' },
+  seguro: { clase: 'seguro', icono: '✅', abrir: 'Abrir sitio' },
+  precaucion: { clase: 'precaucion', icono: '⚠️', abrir: 'Abrir con cuidado' },
+  peligroso: { clase: 'peligroso', icono: '⛔', abrir: 'Abrir de todos modos' },
 };
 const ICONOS = { peligro: '✕', alerta: '!', bien: '✓', info: 'i' };
 const TIPOS = { peligro: 'Peligro', alerta: 'Alerta', bien: 'A favor', info: 'Dato' };
 const PESO = { peligro: 3, alerta: 2, bien: 1, info: 0 };
+/** Signals the "why engines flag it" block already explains in full. */
+const EXPLICADAS = new Set(['vt-malicioso', 'vt-minoritario', 'vt-falso-positivo', 'destino-malicioso', 'destino-minoritario']);
 
 function el(etiqueta, props = {}, ...hijos) {
   const nodo = document.createElement(etiqueta);
@@ -26,8 +32,7 @@ function el(etiqueta, props = {}, ...hijos) {
     if (clave === 'class') nodo.className = valor;
     else nodo.setAttribute(clave, valor);
   }
-  // Children can arrive nested (a list of [dt, dd] pairs), so flatten all the way down —
-  // a single level turned each pair into the text "[object HTMLElement],[object …]".
+  // Children can arrive nested (a list of [dt, dd] pairs), so flatten all the way down.
   for (const hijo of hijos.flat(Infinity)) {
     if (hijo === null || hijo === undefined || hijo === false) continue;
     nodo.append(hijo instanceof Node ? hijo : String(hijo));
@@ -56,19 +61,119 @@ const hostDe = (url) => {
   }
 };
 
-/* ---------- Ficha: the six facts at a glance ---------- */
+/* ---------- Opening the site, with a confirmation that matches the verdict ---------- */
 
-/**
- * Each tile takes its colour from the worst signal about that subject, so the grid and
- * the "why" list can never disagree.
- */
+function dialogoAbrir(res, urlAbrir) {
+  const host = hostDe(urlAbrir) ?? urlAbrir;
+  const riesgo = (res.senales ?? []).find((s) => s.tipo === 'peligro') ?? (res.senales ?? []).find((s) => s.tipo === 'alerta');
+  const confirmar = el('button', { type: 'button', class: `boton-abrir boton-${res.nivel}` }, 'Abrir ↗');
+  const cancelar = el('button', { type: 'button', class: 'secondary-btn', autofocus: '' }, 'Cancelar');
+
+  const cuerpo = [];
+  if (res.nivel === 'seguro') {
+    cuerpo.push(el('p', {}, `Se abrirá ${host} en una pestaña nueva.`));
+  } else if (res.nivel === 'precaucion') {
+    cuerpo.push(
+      el('p', {}, riesgo ? `Shield Link encontró esto: ${riesgo.titulo}.` : 'Shield Link encontró motivos para tener cuidado.'),
+      el('p', {}, 'Ábrelo solo si confías en quien te lo envió, y no escribas contraseñas ni datos de pago en él.'),
+    );
+  } else {
+    const casilla = el('input', { type: 'checkbox', id: 'entiendo-riesgo' });
+    confirmar.disabled = true;
+    casilla.addEventListener('change', () => (confirmar.disabled = !casilla.checked));
+    cuerpo.push(
+      el('p', {}, riesgo ? `${riesgo.titulo}.` : 'Este enlace es peligroso.'),
+      el('p', {}, 'Abrirlo puede exponerte al robo de tus cuentas o a software malicioso. Si alguien te lo envió pidiéndote que entres rápido, es una señal más de engaño.'),
+      el('label', { class: 'dialogo-casilla', for: 'entiendo-riesgo' }, casilla, 'Entiendo el riesgo y quiero abrirlo igual'),
+    );
+  }
+
+  const titulo = { seguro: 'Vas a salir de Shield Link', precaucion: 'Antes de abrirlo', peligroso: 'Este enlace es peligroso' }[res.nivel];
+  const dialogo = el(
+    'dialog',
+    { class: `dialogo dialogo-${res.nivel}`, 'aria-labelledby': 'dialogo-titulo' },
+    el('h3', { id: 'dialogo-titulo' }, titulo),
+    el('p', { class: 'dialogo-url' }, urlAbrir),
+    cuerpo,
+    el('div', { class: 'dialogo-acciones' }, cancelar, confirmar),
+  );
+  cancelar.addEventListener('click', () => dialogo.close());
+  confirmar.addEventListener('click', () => {
+    // noopener: the opened page gets no handle back to this one.
+    window.open(urlAbrir, '_blank', 'noopener,noreferrer');
+    dialogo.close();
+  });
+  dialogo.addEventListener('close', () => dialogo.remove());
+  return dialogo;
+}
+
+/* ---------- Left: the answer ---------- */
+
+function cabecera(res, nivel, urlAbrir) {
+  const host = hostDe(res.detalles?.url ?? '');
+  const abrir = urlAbrir
+    ? el('button', { type: 'button', class: `boton-abrir boton-${res.nivel}` }, `${nivel.abrir} ↗`)
+    : null;
+  abrir?.addEventListener('click', () => {
+    const dialogo = dialogoAbrir(res, urlAbrir);
+    document.body.append(dialogo);
+    dialogo.showModal();
+  });
+
+  return el(
+    'section',
+    { class: 'respuesta' },
+    el(
+      'header',
+      { class: 'informe-cabecera' },
+      el('span', { class: 'informe-icono', 'aria-hidden': 'true' }, nivel.icono),
+      el('div', {}, el('h2', {}, res.recomendacion ?? res.nivel), res.certeza ? el('span', { class: `certeza certeza-${res.certeza}` }, `Certeza ${res.certeza}`) : null),
+    ),
+    host ? el('p', { class: 'informe-enlace' }, el('strong', {}, host), el('span', {}, res.detalles.url)) : null,
+    el('p', { class: 'informe-motivo' }, res.motivo),
+    el('div', { class: 'acciones' }, abrir, el('button', { class: 'secondary-btn', id: 'resetBtn', type: 'button' }, 'Escanear otro enlace')),
+  );
+}
+
+const ICONO_CONCLUSION = { coherente: '✓', dudoso: '!', 'no-cuadra': '✕', 'sin-datos': 'i' };
+
+/** What the site says it is, and whether independent evidence backs it up. */
+function queEs(res) {
+  const s = res.sitio;
+  if (!s || (!s.dice && !s.titulo && !s.puntos.length && !s.categorias.length)) return null;
+  const quien = s.dice
+    ? el('p', { class: 'sitio-dice' }, el('span', { class: 'sitio-fuente' }, `Según ${s.nombre ? `${s.nombre}, ` : 'la propia página, '}`), `“${s.dice}”`)
+    : s.titulo
+      ? el('p', { class: 'sitio-dice' }, el('span', { class: 'sitio-fuente' }, 'Se presenta como '), `“${s.titulo}”`)
+      : null;
+
+  return el(
+    'section',
+    { class: 'sitio', 'aria-label': 'Qué es este sitio' },
+    el('h3', {}, 'Qué es este sitio'),
+    quien,
+    el('p', { class: `sitio-conclusion sitio-${s.estado}` }, el('span', { class: 'senal-icono', 'aria-hidden': 'true' }, ICONO_CONCLUSION[s.estado]), s.conclusion),
+    s.puntos.length || s.categorias.length
+      ? el(
+          'details',
+          { class: 'sitio-comprobacion' },
+          el('summary', {}, 'Cómo se comprobó'),
+          s.puntos.length ? el('ul', { class: 'sitio-puntos' }, s.puntos.map((p) => el('li', { class: `punto-${p.tipo}` }, p.texto))) : null,
+          s.categorias.length ? el('p', { class: 'sitio-categorias' }, s.categorias.map((c) => el('span', { class: 'etiqueta' }, c))) : null,
+        )
+      : null,
+  );
+}
+
+/* ---------- The four facts ---------- */
+
 const TEMAS = {
+  popularidad: (id) => ['popular', 'conocido', 'plataforma-abierta'].includes(id),
+  antiguedad: (id) => id.startsWith('dominio-') || id.startsWith('destino-dominio') || id === 'vt-antiguo',
+  conexion: (id) => id === 'sin-https' || id === 'degrada-https' || id.startsWith('certificado-'),
   motores: (id) => id.startsWith('vt-') || id.startsWith('destino-malicioso') || id.startsWith('destino-minoritario'),
-  dominio: (id) => id.startsWith('dominio-') || id.startsWith('destino-dominio') || id === 'tld-riesgo' || id === 'punycode' || id.startsWith('marca-'),
-  certificado: (id) => id === 'sin-https' || id === 'degrada-https' || id.startsWith('certificado-'),
-  destino: (id) => ['redirige-otro-dominio', 'acortador', 'cadena-larga', 'redireccion-pagina', 'respuesta-error'].includes(id),
-  servidor: (id) => id === 'red-interna' || id === 'ip-como-dominio' || id === 'puerto',
-  pagina: (id) => ['clave-a-otro-dominio', 'suplanta-marca', 'pide-clave'].includes(id),
+  destino: (id) => ['redirige-otro-dominio', 'acortador', 'cadena-larga'].includes(id),
+  pagina: (id) => ['clave-a-otro-dominio', 'suplanta-marca', 'pide-clave', 'dice-ser-marca'].includes(id),
 };
 
 function estadoDe(tema, senales) {
@@ -77,61 +182,63 @@ function estadoDe(tema, senales) {
   return relevantes.reduce((peor, s) => (PESO[s.tipo] > PESO[peor] ? s.tipo : peor), 'bien');
 }
 
-function datosFicha(res) {
+function ficha(res) {
   const d = res.detalles;
   const r = d.reputacion;
-  const v = d.visita;
-  const saltos = d.destino.saltos.length;
+  const pop = d.popularidad;
+  const senales = res.senales;
+  const plataforma = senales.some((s) => s.id === 'plataforma-abierta');
 
-  const motores =
-    r.estado === 'conocido' ? `${r.maliciosos + r.sospechosos} / ${r.total}` : r.estado === 'desconocido' ? 'Sin análisis' : r.estado === 'omitido' ? 'No consultado' : 'Sin datos';
+  const popularidad = plataforma
+    ? 'Plataforma abierta'
+    : !pop ? 'Sin datos' : pop.rank === 1 ? '#1 mundial' : pop.rank ? `#${pop.rank.toLocaleString('es')} mundial` : 'Poco conocido';
+  const antiguedad = d.dominio?.creado ? edad(d.dominio.creado) : r.primerEnvio ? `Visto hace ${edad(r.primerEnvio)}` : d.dominio ? 'Sin registro público' : 'Es una IP';
+  const conexion = d.certificado ? (d.certificado.valido ? 'Cifrada' : 'Certificado inválido') : senales.some((s) => s.id === 'sin-https') ? 'Sin cifrar' : 'Sin datos';
+  const motores = r.estado === 'conocido' ? `${r.maliciosos + r.sospechosos} / ${r.total}` : r.estado === 'desconocido' ? 'Sin análisis' : r.estado === 'omitido' ? 'No consultado' : 'Sin datos';
 
-  const dominio = d.dominio?.creado ? edad(d.dominio.creado) : d.dominio ? 'Sin registro público' : 'Es una IP';
-
-  const certificado = d.certificado
-    ? d.certificado.valido ? 'Válido' : 'No válido'
-    : res.senales.some((s) => s.id === 'sin-https') ? 'Sin HTTPS' : 'Sin datos';
-
-  const destino = d.destino.dominioFinal
-    ? `→ ${hostDe(d.destino.urlFinal) ?? d.destino.dominioFinal}`
-    : saltos > 1 ? `${saltos - 1} ${saltos === 2 ? 'salto' : 'saltos'}, mismo sitio` : v.visitado ? 'Sin redirecciones' : 'No visitado';
-
-  const servidor = v.bloqueado?.includes('interna')
-    ? 'Red interna'
-    : d.servidor ? [d.servidor.red ?? d.servidor.ip, d.servidor.pais ? `(${d.servidor.pais})` : null].filter(Boolean).join(' ') : 'Sin datos';
-
-  const pagina = v.prudente
-    ? 'No se abrió'
-    : d.pagina ? (d.pagina.formulariosConClave || d.pagina.camposClave ? 'Pide contraseña' : 'No pide contraseña') : 'Sin datos';
-
-  return [
+  const datos = [
+    ['popularidad', 'Popularidad', popularidad],
+    ['antiguedad', 'Antigüedad', antiguedad],
+    ['conexion', 'Conexión', conexion],
     ['motores', 'Motores', motores],
-    ['dominio', 'Antigüedad', dominio],
-    ['certificado', 'Certificado', certificado],
-    ['destino', 'Destino', destino],
-    ['servidor', 'Servidor', servidor],
-    ['pagina', 'Página', pagina],
   ];
-}
+  // Only when they add something: where it really goes, and whether it asks for a password.
+  if (d.destino.dominioFinal) datos.push(['destino', 'Lleva a', hostDe(d.destino.urlFinal) ?? d.destino.dominioFinal]);
+  if (d.pagina?.camposClave || d.visita?.prudente) datos.push(['pagina', 'Página', d.visita?.prudente ? 'No se abrió' : 'Pide contraseña']);
 
-function ficha(res) {
   return el(
     'dl',
     { class: 'ficha' },
-    datosFicha(res).map(([tema, etiqueta, valor]) =>
-      el('div', { class: `ficha-dato ficha-${estadoDe(tema, res.senales)}` }, el('dt', {}, etiqueta), el('dd', {}, valor)),
+    datos.map(([tema, etiqueta, valor]) => el('div', { class: `ficha-dato ficha-${estadoDe(tema, senales)}` }, el('dt', {}, etiqueta), el('dd', {}, valor))),
+  );
+}
+
+/* ---------- Right: the explanation ---------- */
+
+const METODO = { blacklist: 'por lista', 'pattern-matching': 'por patrón', heuristic: 'heurístico' };
+
+function porQueLoMarcan(res) {
+  const d = res.detecciones;
+  if (!d) return null;
+  return el(
+    'section',
+    { class: `detecciones detecciones-${d.interpretacion}`, 'aria-label': 'Detecciones' },
+    el('h3', {}, d.titulo),
+    el('p', {}, d.texto),
+    el(
+      'ul',
+      { class: 'detecciones-motores' },
+      d.motores.map((m) => el('li', {}, el('strong', {}, m.motor), ` · ${m.resultado ?? m.categoria}${METODO[m.metodo] ? ` · ${METODO[m.metodo]}` : ''}`)),
     ),
   );
 }
 
-/* ---------- Por qué: warnings in full, the rest folded ---------- */
-
-const itemSenal = (s) =>
+const itemSenal = (s, conDetalle = true) =>
   el(
     'li',
     { class: `senal senal-${s.tipo}` },
     el('span', { class: 'senal-icono', title: TIPOS[s.tipo], 'aria-label': TIPOS[s.tipo] }, ICONOS[s.tipo]),
-    el('div', {}, el('strong', {}, s.titulo), s.detalle ? el('p', {}, s.detalle) : null),
+    el('div', {}, el('strong', {}, s.titulo), conDetalle && s.detalle ? el('p', {}, s.detalle) : null),
   );
 
 function plegado(senales, icono, clase, texto) {
@@ -140,27 +247,28 @@ function plegado(senales, icono, clase, texto) {
     'details',
     { class: `senales-plegadas ${clase}` },
     el('summary', {}, el('span', { class: 'senal-icono', 'aria-hidden': 'true' }, icono), texto),
-    el('ul', { class: 'senales' }, senales.map(itemSenal)),
+    el('ul', { class: 'senales' }, senales.map((s) => itemSenal(s))),
   );
 }
 
-function porQue(senales) {
-  const graves = senales.filter((s) => s.tipo === 'peligro' || s.tipo === 'alerta');
-  const bienes = senales.filter((s) => s.tipo === 'bien');
-  const datos = senales.filter((s) => s.tipo === 'info');
-  if (!senales.length) return null;
+function hallazgos(res) {
+  const senales = res.senales ?? [];
+  const explicadas = res.detecciones ? EXPLICADAS : new Set();
+  const enContra = senales.filter((s) => (s.tipo === 'peligro' || s.tipo === 'alerta') && !explicadas.has(s.id));
+  const aFavor = senales.filter((s) => s.tipo === 'bien');
+  const datos = senales.filter((s) => s.tipo === 'info' && !explicadas.has(s.id));
+  if (!enContra.length && !aFavor.length && !datos.length) return null;
 
   return el(
     'section',
-    { class: 'informe-porque', 'aria-label': 'Por qué' },
-    el('h3', {}, 'Por qué'),
-    graves.length ? el('ul', { class: 'senales' }, graves.map(itemSenal)) : null,
-    plegado(bienes, ICONOS.bien, 'senal-bien', `${bienes.length} ${bienes.length === 1 ? 'señal' : 'señales'} a favor`),
-    plegado(datos, ICONOS.info, 'senal-info', `${datos.length} ${datos.length === 1 ? 'dato más' : 'datos más'}`),
+    { class: 'hallazgos', 'aria-label': 'Hallazgos' },
+    enContra.length ? [el('h3', {}, `En contra (${enContra.length})`), el('ul', { class: 'senales' }, enContra.map((s) => itemSenal(s)))] : el('h3', {}, 'En contra (0)'),
+    plegado(aFavor, ICONOS.bien, 'senal-bien', `A favor (${aFavor.length})`),
+    plegado(datos, ICONOS.info, 'senal-info', `Otros datos (${datos.length})`),
   );
 }
 
-/* ---------- Detalles técnicos: everything, behind one button ---------- */
+/* ---------- Technical detail ---------- */
 
 function bloque(titulo, filas) {
   const visibles = filas.filter(([, valor]) => valor !== null && valor !== undefined && valor !== '' && !(Array.isArray(valor) && !valor.length));
@@ -169,44 +277,21 @@ function bloque(titulo, filas) {
     'section',
     { class: 'tecnico-bloque' },
     el('h4', {}, titulo),
-    el(
-      'dl',
-      {},
-      visibles.map(([etiqueta, valor]) => [
-        el('dt', {}, etiqueta),
-        el('dd', {}, Array.isArray(valor) ? el('ul', {}, valor.map((v) => el('li', {}, v))) : valor),
-      ]),
-    ),
+    el('dl', {}, visibles.map(([etiqueta, valor]) => [el('dt', {}, etiqueta), el('dd', {}, Array.isArray(valor) ? el('ul', {}, valor.map((v) => el('li', {}, v))) : valor)])),
   );
 }
 
-function filasReputacion(r, prefijo = '') {
-  if (!r) return [];
-  const e = (texto) => `${prefijo}${texto}`;
-  if (r.estado === 'desconocido') return [[e('VirusTotal'), 'Sin análisis previos de este enlace']];
-  if (r.estado === 'omitido') return [[e('VirusTotal'), 'No se consultó: la extensión ya es de alto riesgo']];
-  if (r.estado !== 'conocido') return [[e('VirusTotal'), 'No disponible en este momento']];
-  return [
-    [e('Motores'), `${r.maliciosos} maliciosos · ${r.sospechosos} sospechosos · ${r.inofensivos} inofensivos, de ${r.total}`],
-    [e('Detecciones'), r.detecciones.map((d) => `${d.motor}: ${d.resultado ?? d.categoria}`)],
-    [e('Categorías'), r.categorias.join(', ')],
-    [e('Votos de la comunidad'), r.votos.inofensivo || r.votos.malicioso ? `${r.votos.inofensivo} inofensivo · ${r.votos.malicioso} malicioso` : null],
-    [e('Primer análisis'), conEdad(r.primerEnvio)],
-    [e('Último análisis'), conEdad(r.ultimoAnalisis)],
-  ];
-}
-
-function tecnico(d) {
+function tecnico(res) {
+  const d = res.detalles;
   const saltos = d.destino.saltos;
+  const r = d.reputacion;
   const bloques = [
-    bloque('Destino', [
+    bloque('Recorrido del enlace', [
       ['Enlace analizado', d.url],
-      ['Recorrido', saltos.length > 1 ? saltos.map((s) => `${s.estado} · ${s.url}`) : null],
+      ['Saltos', saltos.length > 1 ? saltos.map((s) => `${s.estado} · ${s.url}`) : null],
       ['Destino final', d.destino.urlFinal && d.destino.urlFinal !== d.url ? d.destino.urlFinal : null],
-      // VirusTotal often lists the analysed URL itself, sometimes twice; only show hops that add something.
-      ['Redirecciones vistas por VirusTotal', [...new Set(d.destino.redireccionesConocidas)].filter((u) => u !== d.url)],
     ]),
-    bloque('Dominio', d.dominio ? [
+    bloque('Registro del dominio', d.dominio ? [
       ['Dominio', d.dominio.nombre],
       ['Registrado', conEdad(d.dominio.creado)],
       ['Vence', fecha(d.dominio.expira)],
@@ -215,111 +300,64 @@ function tecnico(d) {
     bloque('Certificado', d.certificado ? [
       ['Emitido por', d.certificado.emisor],
       ['Para', d.certificado.sujeto],
-      ['Válido desde', fecha(d.certificado.desde)],
-      ['Válido hasta', fecha(d.certificado.hasta)],
+      ['Vigencia', `${fecha(d.certificado.desde)} al ${fecha(d.certificado.hasta)}`],
       ['Estado', d.certificado.valido ? 'Válido' : `No válido (${d.certificado.error})`],
     ] : []),
     bloque('Servidor', d.servidor ? [
       ['IP', d.servidor.ip],
-      ['Red', d.servidor.red],
-      ['Organización', d.servidor.organizacion],
+      ['Red', [d.servidor.red, d.servidor.organizacion].filter(Boolean).join(' · ') || null],
       ['País', d.servidor.pais],
     ] : []),
-    bloque('Reputación', [...filasReputacion(d.reputacion), ...filasReputacion(d.reputacionDestino, 'Destino · ')]),
+    bloque('VirusTotal', r.estado === 'conocido' ? [
+      ['Resultado', `${r.maliciosos} maliciosos · ${r.sospechosos} sospechosos · ${r.inofensivos} inofensivos, de ${r.total}`],
+      ['Primer análisis', conEdad(r.primerEnvio)],
+      ['Último análisis', conEdad(r.ultimoAnalisis)],
+      ['Votos de la comunidad', r.votos.inofensivo || r.votos.malicioso ? `${r.votos.inofensivo} inofensivo · ${r.votos.malicioso} malicioso` : null],
+    ] : []),
     bloque('Página', d.pagina ? [
       ['Título', d.pagina.titulo],
-      ['Nombre del sitio', d.pagina.nombreSitio],
       ['Formularios', d.pagina.formularios ? `${d.pagina.formularios} (${d.pagina.formulariosConClave} piden contraseña)` : 'Ninguno'],
       ['Envía contraseñas a', d.pagina.destinosDeClave],
-      ['Iframes', d.pagina.iframes || null],
-      ['Scripts de otros dominios', d.pagina.scriptsExternos],
+      ['Scripts de otros dominios', d.pagina.scriptsExternos.length ? `${d.pagina.scriptsExternos.length}: ${d.pagina.scriptsExternos.slice(0, 5).join(', ')}` : null],
     ] : []),
   ].filter(Boolean);
 
-  if (!bloques.length) return null;
-  return el('details', { class: 'informe-tecnico' }, el('summary', {}, 'Ver detalles técnicos'), el('div', { class: 'tecnico-cuerpo' }, bloques));
-}
-
-/* ---------- The card ---------- */
-
-/** Which link the verdict is about: the host first, since that is who you would be talking to. */
-function enlace(url) {
-  const host = url ? hostDe(url) : null;
-  if (!host) return null;
-  return el('p', { class: 'informe-enlace' }, el('strong', {}, host), el('span', {}, url));
-}
-
-const ICONO_CONCLUSION = { coherente: '✓', dudoso: '!', 'no-cuadra': '✕', 'sin-datos': 'i' };
-
-/**
- * What the site says it is, and whether that holds up. The description is the site's own
- * text — on a phishing page, the attacker's — so it is quoted as a claim, and the server's
- * contrast against independent evidence (who owns the domain, how vendors classify it, how
- * old it is) says whether to believe it.
- */
-function queEs(res) {
-  const s = res.sitio;
-  if (!s || (!s.dice && !s.titulo && !s.puntos.length && !s.categorias.length)) return null;
-
+  const virustotal = el(
+    'a',
+    { class: 'enlace-externo', href: `https://www.virustotal.com/gui/search/${encodeURIComponent(d.url)}`, target: '_blank', rel: 'noopener noreferrer' },
+    'Ver en VirusTotal ↗',
+  );
   return el(
-    'section',
-    { class: 'sitio', 'aria-label': 'Qué es este sitio' },
-    el('h3', {}, 'Qué es este sitio'),
-    s.dice
-      ? el('p', { class: 'sitio-dice' }, el('span', { class: 'sitio-fuente' }, `Según ${s.nombre ? `${s.nombre}, ` : 'la propia página, '}`), `“${s.dice}”`)
-      : s.titulo
-        ? el('p', { class: 'sitio-dice' }, el('span', { class: 'sitio-fuente' }, 'Se presenta como '), `“${s.titulo}”`)
-        : null,
-    el(
-      'p',
-      { class: `sitio-conclusion sitio-${s.estado}` },
-      el('span', { class: 'senal-icono', 'aria-hidden': 'true' }, ICONO_CONCLUSION[s.estado]),
-      s.conclusion,
-    ),
-    s.puntos.length ? el('ul', { class: 'sitio-puntos' }, s.puntos.map((p) => el('li', { class: `punto-${p.tipo}` }, p.texto))) : null,
-    s.categorias.length ? el('p', { class: 'sitio-categorias' }, s.categorias.map((c) => el('span', { class: 'etiqueta' }, c))) : null,
+    'details',
+    { class: 'informe-tecnico' },
+    el('summary', {}, 'Detalles técnicos'),
+    el('div', { class: 'tecnico-cuerpo' }, bloques, virustotal),
   );
 }
 
 function nota(res) {
   const v = res.detalles?.visita;
   const partes = [];
-  if (res.esquemaAsumido) partes.push('El enlace no traía http:// ni https://, así que se analizó con https://.');
-  if (v?.prudente) partes.push('El enlace parecía de un solo uso, así que solo se revisó su servidor, sin abrir la página.');
-  else if (v?.visitado) partes.push('Shield Link visitó el enlace desde sus servidores, sin tus datos ni cookies, y sin ejecutar su código.');
-  else if (v?.bloqueado || v?.error) partes.push(`No se visitó el enlace: ${v.bloqueado ?? v.error}.`);
-  if (res.desdeCache && res.analizadoEn) partes.push(`Resultado de un análisis del ${fecha(res.analizadoEn)}.`);
+  if (res.esquemaAsumido) partes.push('Analizado como https://.');
+  if (v?.prudente) partes.push('Enlace de un solo uso: solo se revisó su servidor.');
+  else if (v?.visitado) partes.push('Visitado desde los servidores de Shield Link, sin tus datos y sin ejecutar su código.');
+  else if (v?.bloqueado || v?.error) partes.push(`No se visitó: ${v.bloqueado ?? v.error}.`);
+  if (res.desdeCache && res.analizadoEn) partes.push(`Análisis del ${fecha(res.analizadoEn)}.`);
   return partes.length ? el('p', { class: 'informe-nota' }, partes.join(' ')) : null;
 }
 
-/** The full report for a verdict. */
-export function renderInforme(res) {
-  const nivel = NIVELES[res.nivel] ?? (res.seguro ? NIVELES.seguro : NIVELES.peligroso);
-  const senales = res.senales ?? [];
-  const completo = Boolean(res.detalles);
+/* ---------- The card ---------- */
 
-  // Two groups: what you read first (verdict, link, reason, the facts) and what you open
-  // if you want more. On a wide screen they sit side by side so the card fits the window.
-  const extra = [queEs(res), porQue(senales), completo ? tecnico(res.detalles) : null].filter(Boolean);
+/** The full report. `urlAbrir` is the link exactly as entered, for the open button. */
+export function renderInforme(res, { urlAbrir = null } = {}) {
+  const nivel = NIVELES[res.nivel] ?? (res.seguro ? NIVELES.seguro : NIVELES.peligroso);
+  const completo = Boolean(res.detalles);
+  const extra = [porQueLoMarcan(res), hallazgos(res), completo ? tecnico(res) : null, nota(res)].filter(Boolean);
 
   return el(
     'article',
     { class: `informe informe-${nivel.clase}` },
-    el(
-      'div',
-      { class: 'informe-principal' },
-      el(
-        'header',
-        { class: 'informe-cabecera' },
-        el('span', { class: 'informe-icono', 'aria-hidden': 'true' }, nivel.icono),
-        el('div', {}, el('h2', {}, nivel.titulo), res.certeza ? el('span', { class: `certeza certeza-${res.certeza}` }, `Certeza ${res.certeza}`) : null),
-      ),
-      enlace(res.detalles?.url),
-      el('p', { class: 'informe-motivo' }, res.motivo),
-      completo ? ficha({ ...res, senales }) : null,
-      nota(res),
-      el('button', { class: 'secondary-btn', id: 'resetBtn', type: 'button' }, 'Escanear otro enlace'),
-    ),
+    el('div', { class: 'informe-principal' }, cabecera(res, nivel, urlAbrir), queEs(res), completo ? ficha(res) : null),
     extra.length ? el('div', { class: 'informe-extra' }, extra) : null,
   );
 }
