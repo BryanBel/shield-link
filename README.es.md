@@ -33,6 +33,10 @@ ida y vuelta al sitio, sin más, es de 234 ms; o sea, un veredicto en caché le 
 servidor unos 20 ms—. También reserva el presupuesto de 500 consultas diarias del plan
 gratuito para los enlaces que sí lo necesitan.
 
+La excepción es la primera consulta después de un rato sin uso. Neon suspende la base
+tras cinco minutos sin tráfico, y en una medición la consulta que la despertó —junto con
+una función en frío— tardó 863 ms, unos 600 ms más que una en caliente.
+
 Ese presupuesto —4 consultas por minuto, 500 por día— lo comparten todos los visitantes,
 así que las consultas que llegarían a la capa 5 tienen además un límite por cliente: 4 por
 minuto y 50 por día. Pasado el límite, `/api/scan` responde `429`. Los veredictos de caché

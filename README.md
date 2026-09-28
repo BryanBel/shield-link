@@ -31,6 +31,10 @@ lookup of the same URL costs nothing. In production that is the difference betwe
 the site is 234 ms, so a cached verdict costs the server about 20 ms. It also keeps the
 free tier's 500-requests-a-day budget for links that actually need it.
 
+The exception is the first request after a quiet spell. Neon suspends the database after
+five minutes without traffic, and in one measurement the request that woke it — along
+with a cold function — took 863 ms, about 600 ms more than a warm one.
+
 That budget — 4 lookups a minute, 500 a day — is shared by every visitor, so lookups that
 would reach layer 5 are also limited per client: 4 a minute and 50 a day. Past that,
 `/api/scan` answers `429`. Cached and heuristic verdicts cost nothing and are never
