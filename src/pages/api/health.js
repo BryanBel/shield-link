@@ -22,7 +22,7 @@ export const GET = async () => {
 
   if (sql) {
     try {
-      await sql`select url_segura from lista_blanca limit 1`;
+      await sql`select url_hash from analisis limit 1`;
       alcanzable = true;
     } catch (queryError) {
       error = queryError.message;

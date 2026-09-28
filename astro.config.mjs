@@ -5,7 +5,9 @@ import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
-  adapter: vercel(),
+  // A fresh analysis visits the link, follows its redirects and queries three registries.
+  // Each step has its own timeout and the worst case stays near 12 s; this is the ceiling.
+  adapter: vercel({ maxDuration: 15 }),
 
   // The site ships no images, but an SSR build still exposes Astro's /_image optimisation
   // endpoint. Backed by sharp — which is not installed — it answered every request with a

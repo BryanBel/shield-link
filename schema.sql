@@ -1,4 +1,4 @@
--- Shield Link — reputation store
+-- Shield Link — analysis store
 --
 -- Run this as the database owner, not as the application role:
 --
@@ -8,37 +8,39 @@
 -- losing rows. It uses a DO block, so it needs a client that sends the file as-is, like
 -- psql, rather than one that splits it on semicolons.
 --
--- A NOTE ON ACCESS CONTROL, because this file used to carry the opposite.
+-- A NOTE ON ACCESS CONTROL, because this project used to carry the opposite.
 --
--- On Supabase these two tables were reachable from the browser through PostgREST with a
--- public anonymous key, so they needed row-level security to be safe -- and an early
--- version shipped `FOR ALL USING (true)`, which granted select, insert, update and delete
--- to every caller. Anyone could insert a malicious URL into lista_blanca and have Shield
--- Link vouch for it.
+-- On Supabase the reputation tables were reachable from the browser through PostgREST
+-- with a public anonymous key, so they needed row-level security to be safe -- and an
+-- early version shipped `FOR ALL USING (true)`, which granted select, insert, update and
+-- delete to every caller. Anyone could insert a malicious URL into the allowlist and have
+-- Shield Link vouch for it.
 --
 -- The database now sits behind a connection string that only the server holds. There is
 -- no anonymous role and no HTTP interface in front of it, so there is nothing for a
 -- policy to defend against: RLS here would be theatre rather than protection. What keeps
--- these tables safe is that only the server routes can reach them, and the
--- browser bundle contains no credential -- verifiable with `grep -r neon dist/client`
--- after a build.
+-- these tables safe is that only the server routes can reach them, as a role that can
+-- touch rows and nothing else (see the end of this file), and the browser bundle contains
+-- no credential -- verifiable with `grep -r neon dist/client` after a build.
 
-CREATE TABLE IF NOT EXISTS lista_blanca (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    url_segura     TEXT UNIQUE NOT NULL,
-    fecha_analisis TIMESTAMPTZ NOT NULL DEFAULT now()
+-- One row per analysed URL. The key is the SHA-256 of the URL, never the URL itself: a
+-- link can carry a password-reset or session token, and nothing here needs to read it
+-- back. `informe` is the full report as the API returns it, with the query stripped from
+-- every URL it mentions. Rows expire -- 7 days for a safe verdict, 1 for caution, 30 for
+-- dangerous -- and /api/scan prunes them as it writes.
+CREATE TABLE IF NOT EXISTS analisis (
+    url_hash  TEXT        PRIMARY KEY,
+    nivel     TEXT        NOT NULL,
+    informe   JSONB       NOT NULL,
+    creado    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    vence     TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS lista_negra (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    url_maliciosa  TEXT UNIQUE NOT NULL,
-    motivo         TEXT NOT NULL,
-    fecha_reporte  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+CREATE INDEX IF NOT EXISTS analisis_vence ON analisis (vence);
 
--- Per-IP budget for VirusTotal lookups. One row per client, scope ('minuto' or 'dia') and
--- window start; /api/scan increments it before every lookup and prunes rows older than
--- two days. See the comment on LIMITE_POR_MINUTO in src/pages/api/scan.js.
+-- Per-IP budget for fresh analyses. One row per client, scope ('minuto' or 'dia') and
+-- window start; /api/scan increments it before every analysis and prunes rows older than
+-- two days. See src/utils/analisis/limite.server.js.
 CREATE TABLE IF NOT EXISTS limite_peticiones (
     alcance  TEXT        NOT NULL,
     ip       TEXT        NOT NULL,
@@ -64,7 +66,7 @@ BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'shieldlink_app') THEN
         GRANT USAGE ON SCHEMA public TO shieldlink_app;
         GRANT SELECT, INSERT, UPDATE, DELETE
-            ON lista_blanca, lista_negra, limite_peticiones
+            ON analisis, limite_peticiones
             TO shieldlink_app;
     END IF;
 END

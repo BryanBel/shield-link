@@ -9,12 +9,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "node --test"
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.11",
     "@neondatabase/serverless": "^1.1.0",
-    "astro": "^7.3.5"
+    "astro": "^7.3.5",
+    "tldts": "^7.4.16"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
