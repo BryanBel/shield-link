@@ -118,6 +118,11 @@ since a link can carry a token — and every URL inside a stored report has its 
 removed. They expire: 7 days for a safe verdict, 1 for caution, 30 for dangerous, because a
 verdict is a snapshot and domains change hands.
 
+Because the sources run in parallel, a full investigation is quick. Measured in production
+from a client whose bare round trip to the site is 80 ms: a fresh analysis took 402 ms and
+a cached one 91 ms (medians of 4 and 12). The first request after five idle minutes also
+wakes the database, which cost about 600 ms extra in an earlier, single measurement.
+
 VirusTotal's free tier allows 4 lookups a minute and 500 a day, shared by every visitor, and
 each fresh analysis also visits the site. So fresh analyses are limited per client: 4 a
 minute and 50 a day. Past that, `/api/scan` answers `429`. Cached reports cost nothing and

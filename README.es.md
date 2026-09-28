@@ -122,6 +122,12 @@ porque un enlace puede llevar un token— y cada URL dentro de un informe guarda
 query. Vencen: 7 días un veredicto seguro, 1 una precaución, 30 uno peligroso, porque un
 veredicto es una foto y los dominios cambian de dueño.
 
+Como las fuentes corren en paralelo, una investigación completa es rápida. Medido en
+producción desde un cliente cuyo viaje de ida y vuelta al sitio, sin más, es de 80 ms: un
+análisis nuevo tardó 402 ms y uno en caché 91 ms (medianas de 4 y de 12). La primera
+consulta después de cinco minutos sin uso además despierta la base, lo que costó unos
+600 ms extra en una medición anterior y única.
+
 El plan gratuito de VirusTotal permite 4 consultas por minuto y 500 por día, compartidas por
 todos los visitantes, y cada análisis nuevo además visita el sitio. Por eso los análisis
 nuevos tienen un límite por cliente: 4 por minuto y 50 por día. Pasado el límite,
