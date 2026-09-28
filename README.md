@@ -69,7 +69,7 @@ a no.
 
 | Layer | Choice | Why |
 | ----- | ------ | --- |
-| Framework | [Astro](https://astro.build) 6, SSR on [Vercel](https://vercel.com) | The page is static except for one endpoint; Astro ships no JavaScript for the rest |
+| Framework | [Astro](https://astro.build) 7, SSR on [Vercel](https://vercel.com) | The page is static except for one endpoint; Astro ships no JavaScript for the rest |
 | Database | PostgreSQL on [Neon](https://neon.tech) | Two reputation tables and a per-client lookup counter, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
 | Threat intelligence | [VirusTotal API v3](https://www.virustotal.com) | Free tier, called from the server so the key never ships to a browser |
 | Package manager | [pnpm](https://pnpm.io) | |
@@ -95,27 +95,42 @@ cascade moved server-side instead. Today:
 - The database moved off Supabase to Neon, so there is no PostgREST and no anonymous key
   in front of it. It is reachable only with the connection string.
 - Only `/api/scan` and `/api/health` touch it, and both run on the server.
+- They connect as `shieldlink_app`, a role that can read and write rows in the three tables
+  and nothing else: no `DROP`, `ALTER`, `TRUNCATE`, `CREATE TABLE` or `CREATE ROLE`. A leaked
+  connection string costs rows, not the database. The owner's string never leaves the
+  developer's machine.
 - The browser bundle contains no database client and no credential — verifiable with
   `grep -r neon dist/client` after a build.
+
+The page itself runs under a Content-Security-Policy that Astro generates with a hash for
+every inline script and style, and loads nothing from another origin. `vercel.json` adds
+the headers a `<meta>` tag cannot carry: `frame-ancestors 'none'` and `X-Frame-Options`
+against clickjacking, plus `nosniff`, a `Referrer-Policy` and a `Permissions-Policy`.
 
 ## Running it locally
 
 ```sh
 pnpm install
-cp .env.example .env    # fill in the two values below
+cp .env.example .env    # fill in the values below
 pnpm dev                # http://localhost:4321
 ```
 
-Run `schema.sql` against that database. It is idempotent: it creates the tables if they
-are missing and leaves existing rows alone.
+Create the application role once, as the database owner, then apply `schema.sql` with
+`psql`. The file is idempotent: it creates the tables if they are missing, leaves existing
+rows alone, and grants the role its privileges.
+
+```sh
+psql "$DATABASE_URL_ADMIN" -c "CREATE ROLE shieldlink_app LOGIN PASSWORD '...'"
+psql "$DATABASE_URL_ADMIN" -f schema.sql
+```
 
 | Variable | Where to get it |
 | -------- | --------------- |
-| `DATABASE_URL` | Any PostgreSQL connection string. The project speaks plain SQL, not a vendor SDK |
+| `DATABASE_URL` | Connection string for `shieldlink_app`. Any PostgreSQL works; the project speaks plain SQL, not a vendor SDK |
+| `DATABASE_URL_ADMIN` | The owner's connection string. Local only, for `schema.sql`; never set it on Vercel |
 | `VIRUSTOTAL_API_KEY` | virustotal.com → your profile → API key |
 
-Neither carries a `PUBLIC_` prefix on purpose: Astro exposes `PUBLIC_*` to client bundles,
-and the connection string grants full access to the database.
+None carries a `PUBLIC_` prefix on purpose: Astro exposes `PUBLIC_*` to client bundles.
 
 ## Checking the configuration
 

@@ -71,7 +71,7 @@ no.
 
 | Capa | Elección | Por qué |
 | ---- | -------- | ------- |
-| Framework | [Astro](https://astro.build) 6, SSR en [Vercel](https://vercel.com) | La página es estática salvo por un endpoint; Astro no envía JavaScript para el resto |
+| Framework | [Astro](https://astro.build) 7, SSR en [Vercel](https://vercel.com) | La página es estática salvo por un endpoint; Astro no envía JavaScript para el resto |
 | Base de datos | PostgreSQL en [Neon](https://neon.tech) | Dos tablas de reputación y un contador de consultas por cliente, accesibles solo desde el servidor. El driver serverless de Neon habla por HTTP, lo que encaja con una función de Vercel que vive una sola petición — un pool ahí abre una conexión por invocación |
 | Inteligencia de amenazas | [VirusTotal API v3](https://www.virustotal.com) | Plan gratuito, llamado desde el servidor para que la clave nunca llegue al navegador |
 | Gestor de paquetes | [pnpm](https://pnpm.io) | |
@@ -99,27 +99,43 @@ una que un atacante puede usar. En su lugar, toda la cascada se movió al servid
 - La base se movió de Supabase a Neon, así que ya no hay PostgREST ni clave anónima
   delante. Solo se llega con la cadena de conexión.
 - Solo `/api/scan` y `/api/health` la tocan, y ambos corren en el servidor.
+- Se conectan como `shieldlink_app`, un rol que puede leer y escribir filas en las tres
+  tablas y nada más: nada de `DROP`, `ALTER`, `TRUNCATE`, `CREATE TABLE` ni `CREATE ROLE`. Una
+  cadena de conexión filtrada cuesta filas, no la base. La cadena del owner nunca sale de la
+  máquina del desarrollador.
 - El bundle del navegador no contiene cliente de base de datos ni credencial — comprobable
   con `grep -r neon dist/client` después de un build.
+
+La página corre bajo una Content-Security-Policy que Astro genera con un hash por cada
+script y estilo inline, y no carga nada de otro origen. `vercel.json` agrega las cabeceras
+que un `<meta>` no puede llevar: `frame-ancestors 'none'` y `X-Frame-Options` contra el
+clickjacking, más `nosniff`, una `Referrer-Policy` y una `Permissions-Policy`.
 
 ## Ejecutarlo en local
 
 ```sh
 pnpm install
-cp .env.example .env    # completa los dos valores de abajo
+cp .env.example .env    # completa los valores de abajo
 pnpm dev                # http://localhost:4321
 ```
 
-Ejecuta `schema.sql` contra esa base. Es idempotente: crea las tablas si no existen y deja
-intactas las filas que ya estén.
+Crea el rol de la aplicación una vez, como owner de la base, y luego aplica `schema.sql` con
+`psql`. El archivo es idempotente: crea las tablas si no existen, deja intactas las filas que
+ya estén y le da al rol sus permisos.
+
+```sh
+psql "$DATABASE_URL_ADMIN" -c "CREATE ROLE shieldlink_app LOGIN PASSWORD '...'"
+psql "$DATABASE_URL_ADMIN" -f schema.sql
+```
 
 | Variable | Dónde obtenerla |
 | -------- | --------------- |
-| `DATABASE_URL` | Cualquier cadena de conexión de PostgreSQL. El proyecto usa SQL plano, no un SDK |
+| `DATABASE_URL` | Cadena de conexión de `shieldlink_app`. Sirve cualquier PostgreSQL; el proyecto usa SQL plano, no un SDK |
+| `DATABASE_URL_ADMIN` | La cadena del owner. Solo en local, para `schema.sql`; nunca en Vercel |
 | `VIRUSTOTAL_API_KEY` | virustotal.com → tu perfil → API key |
 
 Ninguna lleva prefijo `PUBLIC_` a propósito: Astro expone las `PUBLIC_*` a los bundles del
-cliente, y la cadena de conexión da acceso completo a la base.
+cliente.
 
 ## Verificar la configuración
 
