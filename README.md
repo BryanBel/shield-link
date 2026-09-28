@@ -30,6 +30,11 @@ lookup of the same URL costs nothing. In production that is the difference betwe
 790 ms answer and a 350 ms one, and it keeps the free tier's 500-requests-a-day budget
 for links that actually need it.
 
+That budget — 4 lookups a minute, 500 a day — is shared by every visitor, so lookups that
+would reach layer 5 are also limited per client: 4 a minute and 50 a day. Past that,
+`/api/scan` answers `429`. Cached and heuristic verdicts cost nothing and are never
+counted, so they keep answering.
+
 ## Three verdicts, not two
 
 VirusTotal aggregates around ninety engines of very uneven quality, and a handful of
@@ -60,7 +65,7 @@ a no.
 | Layer | Choice | Why |
 | ----- | ------ | --- |
 | Framework | [Astro](https://astro.build) 6, SSR on [Vercel](https://vercel.com) | The page is static except for one endpoint; Astro ships no JavaScript for the rest |
-| Database | PostgreSQL on [Neon](https://neon.tech) | Two reputation tables, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
+| Database | PostgreSQL on [Neon](https://neon.tech) | Two reputation tables and a per-client lookup counter, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
 | Threat intelligence | [VirusTotal API v3](https://www.virustotal.com) | Free tier, called from the server so the key never ships to a browser |
 | Package manager | [pnpm](https://pnpm.io) | |
 
@@ -92,7 +97,7 @@ cascade moved server-side instead. Today:
 
 ```sh
 pnpm install
-cp .env.example .env    # fill in the three values below
+cp .env.example .env    # fill in the two values below
 pnpm dev                # http://localhost:4321
 ```
 
@@ -102,7 +107,6 @@ are missing and leaves existing rows alone.
 | Variable | Where to get it |
 | -------- | --------------- |
 | `DATABASE_URL` | Any PostgreSQL connection string. The project speaks plain SQL, not a vendor SDK |
-
 | `VIRUSTOTAL_API_KEY` | virustotal.com → your profile → API key |
 
 Neither carries a `PUBLIC_` prefix on purpose: Astro exposes `PUBLIC_*` to client bundles,
@@ -116,23 +120,22 @@ curl https://shield-link.vercel.app/api/health
 
 ```json
 {
-  "supabase": {
-    "url": true,
-    "clave": true,
-    "nombreUsado": "SUPABASE_SECRET_KEY",
+  "base": {
+    "urlDefinida": true,
     "alcanzable": true,
     "error": null
   },
   "virustotal": { "clave": true },
-  "node": "v24.19.0",
+  "node": "v24.20.0",
   "cacheActivo": true
 }
 ```
 
-A missing key and a wrong key otherwise look identical from outside — the scanner keeps
-answering, just without its cache, quietly spending VirusTotal quota on every request
-until the daily limit runs out. The endpoint returns booleans only; no value, prefix or
-length of any secret is exposed.
+A missing connection string and a wrong one otherwise look identical from outside — the
+scanner keeps answering, just without its cache, quietly spending VirusTotal quota on
+every request until the daily limit runs out. The endpoint reports booleans, the Node
+version and, when the database is unreachable, the driver's error message; no value,
+prefix or length of any secret is exposed.
 
 ---
 

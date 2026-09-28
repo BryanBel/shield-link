@@ -31,6 +31,11 @@ consulta de la misma URL no cuesta nada. En producción eso es la diferencia ent
 responder en 790 ms y hacerlo en 350 ms, y reserva el presupuesto de 500 consultas
 diarias del plan gratuito para los enlaces que sí lo necesitan.
 
+Ese presupuesto —4 consultas por minuto, 500 por día— lo comparten todos los visitantes,
+así que las consultas que llegarían a la capa 5 tienen además un límite por cliente: 4 por
+minuto y 50 por día. Pasado el límite, `/api/scan` responde `429`. Los veredictos de caché
+y de heurística no cuestan nada y nunca cuentan, así que siguen respondiendo.
+
 ## Tres veredictos, no dos
 
 VirusTotal agrega unos noventa motores de calidad muy despareja, y un puñado de
@@ -61,7 +66,7 @@ no.
 | Capa | Elección | Por qué |
 | ---- | -------- | ------- |
 | Framework | [Astro](https://astro.build) 6, SSR en [Vercel](https://vercel.com) | La página es estática salvo por un endpoint; Astro no envía JavaScript para el resto |
-| Base de datos | PostgreSQL en [Neon](https://neon.tech) | Dos tablas de reputación, accesibles solo desde el servidor. El driver serverless de Neon habla por HTTP, lo que encaja con una función de Vercel que vive una sola petición — un pool ahí abre una conexión por invocación |
+| Base de datos | PostgreSQL en [Neon](https://neon.tech) | Dos tablas de reputación y un contador de consultas por cliente, accesibles solo desde el servidor. El driver serverless de Neon habla por HTTP, lo que encaja con una función de Vercel que vive una sola petición — un pool ahí abre una conexión por invocación |
 | Inteligencia de amenazas | [VirusTotal API v3](https://www.virustotal.com) | Plan gratuito, llamado desde el servidor para que la clave nunca llegue al navegador |
 | Gestor de paquetes | [pnpm](https://pnpm.io) | |
 
@@ -95,7 +100,7 @@ una que un atacante puede usar. En su lugar, toda la cascada se movió al servid
 
 ```sh
 pnpm install
-cp .env.example .env    # completa los tres valores de abajo
+cp .env.example .env    # completa los dos valores de abajo
 pnpm dev                # http://localhost:4321
 ```
 
@@ -105,7 +110,6 @@ intactas las filas que ya estén.
 | Variable | Dónde obtenerla |
 | -------- | --------------- |
 | `DATABASE_URL` | Cualquier cadena de conexión de PostgreSQL. El proyecto usa SQL plano, no un SDK |
-
 | `VIRUSTOTAL_API_KEY` | virustotal.com → tu perfil → API key |
 
 Ninguna lleva prefijo `PUBLIC_` a propósito: Astro expone las `PUBLIC_*` a los bundles del
@@ -119,23 +123,22 @@ curl https://shield-link.vercel.app/api/health
 
 ```json
 {
-  "supabase": {
-    "url": true,
-    "clave": true,
-    "nombreUsado": "SUPABASE_SECRET_KEY",
+  "base": {
+    "urlDefinida": true,
     "alcanzable": true,
     "error": null
   },
   "virustotal": { "clave": true },
-  "node": "v24.19.0",
+  "node": "v24.20.0",
   "cacheActivo": true
 }
 ```
 
-Una clave ausente y una equivocada se ven idénticas desde fuera: el escáner sigue
-respondiendo, solo que sin caché, gastando cuota de VirusTotal en cada consulta hasta
-agotar el límite diario sin avisar. El endpoint devuelve solo booleanos; no expone el
-valor, el prefijo ni la longitud de ningún secreto.
+Una cadena de conexión ausente y una equivocada se ven idénticas desde fuera: el escáner
+sigue respondiendo, solo que sin caché, gastando cuota de VirusTotal en cada consulta
+hasta agotar el límite diario sin avisar. El endpoint devuelve booleanos, la versión de
+Node y, si la base no responde, el mensaje de error del driver; no expone el valor, el
+prefijo ni la longitud de ningún secreto.
 
 ---
 

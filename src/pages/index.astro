@@ -41,14 +41,14 @@ import Layout from '../layouts/Layout.astro';
 
         // --- LÓGICA DE MOSTRADO SEGÚN EL TIPO DE RESULTADO ---
         if (res.error) {
-            // Caso 1: Error de formato (Naranja/Aviso)
+            // Caso 1: Error de formato o límite de análisis alcanzado (Naranja/Aviso)
             resultDiv.className = "warning";
             resultDiv.innerHTML = `
                 <div class="verdict-content">
-                    <span class="icon">ℹ️</span>
-                    <h2>Formato Incorrecto</h2>
+                    <span class="icon">${res.limite ? '⏳' : 'ℹ️'}</span>
+                    <h2>${res.limite ? 'Límite Alcanzado' : 'Formato Incorrecto'}</h2>
                     <p>${res.motivo}</p>
-                    <button id="resetBtn" class="secondary-btn">Corregir enlace</button>
+                    <button id="resetBtn" class="secondary-btn">${res.limite ? 'Volver' : 'Corregir enlace'}</button>
                 </div>
             `;
         } else {

@@ -50,6 +50,50 @@ const virusTotalId = (url) => Buffer.from(url).toString('base64url').replace(/=/
  */
 const UMBRAL_PELIGRO = 3;
 
+/**
+ * The endpoint is public and the free VirusTotal tier allows 4 lookups a minute and 500 a
+ * day for the whole site. Without a limit, one client sending unique URLs in a loop drains
+ * the day's quota and every other visitor silently falls back to the protocol heuristic.
+ *
+ * Only lookups that would actually reach VirusTotal are counted: a cache hit or a
+ * heuristic block costs nothing, so ordinary use never comes near these numbers. The
+ * counters live in Postgres because a serverless function has no memory that outlives
+ * the request or is shared between instances.
+ */
+const LIMITE_POR_MINUTO = 4;
+const LIMITE_POR_DIA = 50;
+
+/**
+ * Counts one lookup against the client's minute and day windows and reports which limit,
+ * if any, it went over. One round trip: both upserts and the pruning of stale windows run
+ * as a single statement. Rejected attempts count too, so hammering does not reset the
+ * window.
+ */
+async function consumirCupo(sql, ip) {
+  const [fila] = await sql`
+    with poda as (
+      delete from limite_peticiones where ventana < now() - interval '2 days'
+    ),
+    minuto as (
+      insert into limite_peticiones (alcance, ip, ventana)
+      values ('minuto', ${ip}, date_trunc('minute', now()))
+      on conflict (alcance, ip, ventana) do update set conteo = limite_peticiones.conteo + 1
+      returning conteo
+    ),
+    dia as (
+      insert into limite_peticiones (alcance, ip, ventana)
+      values ('dia', ${ip}, date_trunc('day', now()))
+      on conflict (alcance, ip, ventana) do update set conteo = limite_peticiones.conteo + 1
+      returning conteo
+    )
+    select minuto.conteo as minuto, dia.conteo as dia from minuto, dia
+  `;
+
+  if (fila.dia > LIMITE_POR_DIA) return 'dia';
+  if (fila.minuto > LIMITE_POR_MINUTO) return 'minuto';
+  return null;
+}
+
 async function consultarVirusTotal(url) {
   const apiKey = process.env.VIRUSTOTAL_API_KEY ?? import.meta.env.VIRUSTOTAL_API_KEY;
   if (!apiKey) return null;
@@ -104,7 +148,9 @@ async function consultarVirusTotal(url) {
   }
 }
 
-export const POST = async ({ request }) => {
+export const POST = async (context) => {
+  const { request } = context;
+
   let payload;
   try {
     payload = await request.json();
@@ -187,10 +233,42 @@ export const POST = async ({ request }) => {
     );
   }
 
-  // 4. Global engines.
+  // 4. Per-client budget, checked only now that the lookup would actually spend quota.
+  // Like the cache, a failure here must not block the scan: it is logged and let through.
+  if (sql) {
+    // On Vercel this comes from x-forwarded-for, which the platform overwrites with the
+    // real client address, so it cannot be spoofed. Astro throws when it is missing.
+    let ip;
+    try {
+      ip = context.clientAddress;
+    } catch {
+      ip = 'desconocida';
+    }
+
+    try {
+      const excedido = await consumirCupo(sql, ip);
+      if (excedido) {
+        return json(
+          {
+            error: true,
+            limite: true,
+            motivo:
+              excedido === 'dia'
+                ? 'Alcanzaste el límite diario de análisis nuevos. Los enlaces ya analizados siguen respondiendo; vuelve mañana para el resto.'
+                : 'Demasiados análisis nuevos en poco tiempo. Espera un minuto e inténtalo de nuevo.',
+          },
+          429,
+        );
+      }
+    } catch (error) {
+      console.error('[scan] control de cupo falló:', error.message);
+    }
+  }
+
+  // 5. Global engines.
   const resultadoVT = await consultarVirusTotal(urlLimpia);
 
-  // 5. Persist the verdict so the same URL never costs a second lookup. Only confident
+  // 6. Persist the verdict so the same URL never costs a second lookup. Only confident
   // verdicts are cached: a "precaución" is a judgement call about ambiguous evidence, and
   // writing it into either list would harden a maybe into a yes or a no. A failed write
   // only costs quota next time, so it must not change the answer the user gets.
@@ -216,7 +294,7 @@ export const POST = async ({ request }) => {
 
   if (resultadoVT) return json(resultadoVT);
 
-  // 6. Last resort: no reputation data anywhere, so fall back to the transport.
+  // 7. Last resort: no reputation data anywhere, so fall back to the transport.
   if (urlObj.protocol !== 'https:') {
     return json(
       veredicto(

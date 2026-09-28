@@ -14,7 +14,7 @@
 -- The database now sits behind a connection string that only the server holds. There is
 -- no anonymous role and no HTTP interface in front of it, so there is nothing for a
 -- policy to defend against: RLS here would be theatre rather than protection. What keeps
--- these tables safe is that /api/scan is the only code that can reach them, and the
+-- these tables safe is that only the server routes can reach them, and the
 -- browser bundle contains no credential -- verifiable with `grep -r neon dist/client`
 -- after a build.
 
@@ -29,4 +29,15 @@ CREATE TABLE IF NOT EXISTS lista_negra (
     url_maliciosa  TEXT UNIQUE NOT NULL,
     motivo         TEXT NOT NULL,
     fecha_reporte  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Per-IP budget for VirusTotal lookups. One row per client, scope ('minuto' or 'dia') and
+-- window start; /api/scan increments it before every lookup and prunes rows older than
+-- two days. See the comment on LIMITE_POR_MINUTO in src/pages/api/scan.js.
+CREATE TABLE IF NOT EXISTS limite_peticiones (
+    alcance  TEXT        NOT NULL,
+    ip       TEXT        NOT NULL,
+    ventana  TIMESTAMPTZ NOT NULL,
+    conteo   INTEGER     NOT NULL DEFAULT 1,
+    PRIMARY KEY (alcance, ip, ventana)
 );
