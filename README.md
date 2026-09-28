@@ -13,64 +13,102 @@ Alejandro de Humboldt.
 
 ## How a verdict is reached
 
-Six layers, cheapest first. Each one can answer on its own, so most links never reach the
-paid API at the bottom.
+A blocklist can only say whether someone has already reported a link. Shield Link
+investigates it: four sources at once, every finding turned into a signal, and the verdict
+decided from those signals — which the page then shows, so the answer comes with its
+reasons.
 
-| # | Layer | What it decides |
-| - | ----- | --------------- |
-| 1 | Format validation | Rejects anything that is not an `http(s)` URL, before any work happens |
-| 2 | High-risk TLD heuristic | Blocks `.xyz`, `.zip`, `.mov`, `.tk`, `.fit`, `.icu`, `.top` outright — these carry phishing and malware far out of proportion to their share of the web |
-| 3 | Local allowlist | A URL already cleared is answered from Postgres, not re-scanned |
-| 4 | Local blocklist | A URL already found malicious is answered the same way, with the original reason |
-| 5 | VirusTotal API v3 | ~90 engines, queried only for URLs the first four layers could not settle |
-| 6 | Protocol heuristic | Last resort: plain `http` with no reputation data anywhere is called out as unencrypted |
+| Source | What it contributes |
+| ------ | ------------------- |
+| [VirusTotal API v3](https://www.virustotal.com) | The opinion of ~90 engines: which flagged the link and as what, how the web categorises it, how long VirusTotal has known it |
+| A visit to the link | Where it really goes, hop by hop; its TLS certificate; and what the page is — its title, whether it asks for a password, and where that password would be sent |
+| [RDAP](https://about.rdap.org), from the registries | When the domain was registered and through whom; which network owns the server's IP |
+| The URL itself | Tricks in the address: a high-risk TLD, punycode look-alikes, an IP instead of a name, text before an `@`, a brand name on a domain the brand does not own |
 
-Every confident verdict from layer 5 is written back into layer 3 or 4, so the second
-lookup of the same URL costs nothing. In production that is the difference between a
-474 ms answer and a 253 ms one — medians, measured from a client whose bare round trip to
-the site is 234 ms, so a cached verdict costs the server about 20 ms. It also keeps the
-free tier's 500-requests-a-day budget for links that actually need it.
+When a link lands on a different domain — a shortener, a redirect — the destination is what
+the user will actually see, so it gets its own reputation and registration check.
 
-The exception is the first request after a quiet spell. Neon suspends the database after
-five minutes without traffic, and in one measurement the request that woke it — along
-with a cold function — took 863 ms, about 600 ms more than a warm one.
+Every signal is good news, neutral, a warning or a danger, and the verdict follows them:
 
-That budget — 4 lookups a minute, 500 a day — is shared by every visitor, so lookups that
-would reach layer 5 are also limited per client: 4 a minute and 50 a day. Past that,
-`/api/scan` answers `429`. Cached and heuristic verdicts cost nothing and are never
-counted, so they keep answering.
+- **Any danger → `peligroso`.** Three or more engines; a domain registered days ago; a
+  password form that posts to another domain; a login page presenting itself as a bank on
+  a domain the bank does not own; an official domain buried in a subdomain, as in
+  `paypal.com.example.net`; a TLD like `.xyz`, `.zip` or `.top`, which carry phishing far
+  out of proportion to their share of the web and are blocked without spending a
+  VirusTotal lookup.
+- **Otherwise, any warning → `precaucion`.** One or two engines; no HTTPS; a domain a few
+  weeks old; an invalid certificate; a redirect to an unrelated domain nobody vouches for.
+- **Otherwise → `seguro`.**
 
-## Three verdicts, not two
+### Three verdicts, not two
 
 VirusTotal aggregates around ninety engines of very uneven quality, and a handful of
-detections on an established domain is routinely noise. `google.com` itself reports two
-engines calling it malicious against sixty-one calling it harmless. Treating "one or more
-engines" as dangerous — which is what this project did at first — labels most of the web
-a threat and teaches the user to ignore the warning.
+detections on an established domain is routinely noise — `google.com` has at times been
+flagged by two engines against sixty-one calling it harmless. Treating "one or more
+engines" as dangerous, which is what this project did at first, labels most of the web a
+threat and teaches the user to ignore the warning. One or two detections are reported as
+exactly that: caution, with the engines named.
 
-So the scanner reports three levels and shows its arithmetic:
+### How sure it is
+
+Each verdict carries a certainty. A safe link that VirusTotal has analysed and found
+clean, on a domain more than a year old, with a valid certificate, is *high*. A safe link
+VirusTotal has never seen is *low* — nobody has reported it, but nothing vouches for it
+either — and the page says that in words rather than implying more than it knows.
 
 ```jsonc
-// https://github.com  — nothing found
-{ "nivel": "seguro", "motivo": "Análisis global completado: ninguno de los 90 motores de seguridad detectó amenazas." }
-
-// https://google.com — a minority of engines disagree, and the user is told exactly that
-{ "nivel": "precaucion", "motivo": "Detecciones minoritarias: 2 de 90 motores marcan este enlace. Esa proporción suele ser un falso positivo, pero conviene revisarlo antes de abrirlo." }
-
-// https://something.xyz — blocked before spending a request
-{ "nivel": "peligroso", "motivo": "Bloqueo preventivo: la extensión .xyz se utiliza frecuentemente para campañas de phishing y distribución de malware." }
+// POST /api/scan { "url": "https://github.com" } — abridged
+{
+  "nivel": "seguro",
+  "certeza": "alta",
+  "motivo": "Seguro, certeza alta: ninguno de los 92 motores de VirusTotal lo marca, VirusTotal lo conoce desde 2011 y dominio registrado hace 18 años.",
+  "senales": [
+    { "tipo": "bien", "titulo": "Ninguno de los 92 motores de VirusTotal lo marca" },
+    { "tipo": "bien", "titulo": "Dominio registrado hace 18 años", "detalle": "Registrado el 9 de octubre de 2007 a través de MarkMonitor Inc." },
+    { "tipo": "bien", "titulo": "Certificado válido emitido por Sectigo Limited" }
+  ],
+  "detalles": { "destino": {}, "dominio": {}, "certificado": {}, "servidor": {}, "reputacion": {}, "pagina": {} }
+}
 ```
 
-A `precaucion` verdict is deliberately never cached: it is a judgement call about
-ambiguous evidence, and writing it into either list would harden a maybe into a yes or
-a no.
+### Visiting a link without being used by it
+
+A server that fetches a URL someone else chose can be pointed at itself — `127.0.0.1`, the
+cloud metadata address `169.254.169.254`, a private network. Every connection Shield Link
+makes goes through its own DNS lookup, which refuses any address that is not public, IPv4
+or IPv6. The check runs at the moment of connecting, so a hostname cannot resolve to a
+public address when checked and a private one when used.
+
+Beyond that: only ports 80, 443, 8080 and 8443; at most 8 redirects and 7 seconds; no more
+than 512 KB of HTML, read as text and never executed; no cookies, and any credentials in
+the URL are stripped before the request.
+
+Some links are consumed by opening them — a password reset, an email confirmation, an
+unsubscribe. When a link looks like one (a `token`, `code` or `reset` parameter, a long
+random path segment), Shield Link only checks its server and certificate, without opening
+the page, and says so.
+
+The limit of any visit from a server: a site can show it something different from what it
+shows a person. The other sources exist so the verdict never rests on the visit alone.
+
+### Cache and budget
+
+Reports are cached in Postgres, keyed by the SHA-256 of the URL — never the URL itself,
+since a link can carry a token — and every URL inside a stored report has its query
+removed. They expire: 7 days for a safe verdict, 1 for caution, 30 for dangerous, because a
+verdict is a snapshot and domains change hands.
+
+VirusTotal's free tier allows 4 lookups a minute and 500 a day, shared by every visitor, and
+each fresh analysis also visits the site. So fresh analyses are limited per client: 4 a
+minute and 50 a day. Past that, `/api/scan` answers `429`. Cached reports cost nothing and
+are never counted.
 
 ## Stack
 
 | Layer | Choice | Why |
 | ----- | ------ | --- |
 | Framework | [Astro](https://astro.build) 7, SSR on [Vercel](https://vercel.com) | The page is static except for one endpoint; Astro ships no JavaScript for the rest |
-| Database | PostgreSQL on [Neon](https://neon.tech) | Two reputation tables and a per-client lookup counter, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
+| Database | PostgreSQL on [Neon](https://neon.tech) | An analysis cache and a per-client counter, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
 | Threat intelligence | [VirusTotal API v3](https://www.virustotal.com) | Free tier, called from the server so the key never ships to a browser |
 | Package manager | [pnpm](https://pnpm.io) | |
 
@@ -95,8 +133,8 @@ cascade moved server-side instead. Today:
 - The database moved off Supabase to Neon, so there is no PostgREST and no anonymous key
   in front of it. It is reachable only with the connection string.
 - Only `/api/scan` and `/api/health` touch it, and both run on the server.
-- They connect as `shieldlink_app`, a role that can read and write rows in the three tables
-  and nothing else: no `DROP`, `ALTER`, `TRUNCATE`, `CREATE TABLE` or `CREATE ROLE`. A leaked
+- They connect as `shieldlink_app`, a role that can read and write rows in its tables and
+  nothing else: no `DROP`, `ALTER`, `TRUNCATE`, `CREATE TABLE` or `CREATE ROLE`. A leaked
   connection string costs rows, not the database. The owner's string never leaves the
   developer's machine.
 - The browser bundle contains no database client and no credential — verifiable with
