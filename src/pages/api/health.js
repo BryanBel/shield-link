@@ -19,13 +19,6 @@ export const GET = async () => {
   const sql = getSql();
   let alcanzable = false;
   let error = null;
-  let host = null;
-
-  try {
-    host = new URL(process.env.DATABASE_URL ?? import.meta.env.DATABASE_URL).hostname;
-  } catch {
-    host = null;
-  }
 
   if (sql) {
     try {
@@ -41,7 +34,6 @@ export const GET = async () => {
       {
         base: {
           urlDefinida: env('DATABASE_URL'),
-          host,
           alcanzable,
           error,
         },
