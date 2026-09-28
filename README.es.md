@@ -28,8 +28,10 @@ que la mayoría de los enlaces nunca llega a la API del final.
 
 Todo veredicto firme de la capa 5 se escribe de vuelta en la 3 o la 4, así que la segunda
 consulta de la misma URL no cuesta nada. En producción eso es la diferencia entre
-responder en 790 ms y hacerlo en 350 ms, y reserva el presupuesto de 500 consultas
-diarias del plan gratuito para los enlaces que sí lo necesitan.
+responder en 474 ms y hacerlo en 253 ms —medianas, medidas desde un cliente cuyo viaje de
+ida y vuelta al sitio, sin más, es de 234 ms; o sea, un veredicto en caché le cuesta al
+servidor unos 20 ms—. También reserva el presupuesto de 500 consultas diarias del plan
+gratuito para los enlaces que sí lo necesitan.
 
 Ese presupuesto —4 consultas por minuto, 500 por día— lo comparten todos los visitantes,
 así que las consultas que llegarían a la capa 5 tienen además un límite por cliente: 4 por

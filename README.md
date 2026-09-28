@@ -27,8 +27,9 @@ paid API at the bottom.
 
 Every confident verdict from layer 5 is written back into layer 3 or 4, so the second
 lookup of the same URL costs nothing. In production that is the difference between a
-790 ms answer and a 350 ms one, and it keeps the free tier's 500-requests-a-day budget
-for links that actually need it.
+474 ms answer and a 253 ms one — medians, measured from a client whose bare round trip to
+the site is 234 ms, so a cached verdict costs the server about 20 ms. It also keeps the
+free tier's 500-requests-a-day budget for links that actually need it.
 
 That budget — 4 lookups a minute, 500 a day — is shared by every visitor, so lookups that
 would reach layer 5 are also limited per client: 4 a minute and 50 a day. Past that,
