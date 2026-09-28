@@ -6,122 +6,143 @@ import Layout from '../layouts/Layout.astro';
     <main>
         <h1>🛡️ Shield Link</h1>
         <p>Análisis instantáneo de enlaces sospechosos</p>
-        
+
         <div id="inputContainer" class="scanner-card">
-            <input type="text" id="linkInput" placeholder="https://ejemplo-sospechoso.com" />
-            <button id="scanBtn">Analizar Ahora</button>
+            <input type="text" id="linkInput" placeholder="https://ejemplo-sospechoso.com" aria-label="Enlace a analizar" />
+            <button id="scanBtn" type="button">Analizar Ahora</button>
         </div>
 
-        <div id="result" class="hidden"></div>
+        <div id="result" class="hidden" tabindex="-1" aria-live="polite"></div>
     </main>
 </Layout>
 
 <script>
     import { analizarSeguridad } from '../utils/scanner.js';
+    import { renderAviso, renderInforme } from '../utils/renderInforme.js';
 
     const btn = document.getElementById('scanBtn');
     const input = document.getElementById('linkInput') as HTMLInputElement;
-    const resultDiv = document.getElementById('result');
-    const inputContainer = document.getElementById('inputContainer');
+    const resultDiv = document.getElementById('result') as HTMLElement;
+    const inputContainer = document.getElementById('inputContainer') as HTMLElement;
 
-    btn?.addEventListener('click', async () => {
+    function cargando() {
+        const loader = document.createElement('div');
+        loader.className = 'loader';
+        const texto = document.createElement('p');
+        texto.className = 'cargando-texto';
+        texto.textContent = 'Investigando el enlace: reputación, dominio, certificado y destino…';
+        return [loader, texto];
+    }
+
+    async function escanear() {
         const url = input.value.trim();
-        if (!url || !resultDiv || !inputContainer) return;
+        if (!url) return;
 
-        // Estado de carga
         inputContainer.classList.add('hidden');
-        resultDiv.className = "info";
-        resultDiv.innerHTML = `
-            <div class="loader"></div>
-            <p>Consultando base de datos global y motores de seguridad...</p>
-        `;
+        resultDiv.replaceChildren(...cargando());
         resultDiv.classList.remove('hidden');
 
         const res = await analizarSeguridad(url);
 
-        // --- LÓGICA DE MOSTRADO SEGÚN EL TIPO DE RESULTADO ---
-        if (res.error) {
-            // Caso 1: Error de formato o límite de análisis alcanzado (Naranja/Aviso)
-            resultDiv.className = "warning";
-            resultDiv.innerHTML = `
-                <div class="verdict-content">
-                    <span class="icon">${res.limite ? '⏳' : 'ℹ️'}</span>
-                    <h2>${res.limite ? 'Límite Alcanzado' : 'Formato Incorrecto'}</h2>
-                    <p>${res.motivo}</p>
-                    <button id="resetBtn" class="secondary-btn">${res.limite ? 'Volver' : 'Corregir enlace'}</button>
-                </div>
-            `;
-        } else {
-            // Caso 2: veredicto de seguridad. Son tres niveles, no dos: la mayoría de las
-            // URLs que VirusTotal marca lo hacen con un puñado de motores sobre noventa,
-            // y presentar eso como "peligroso" es tan engañoso como ocultarlo.
-            const NIVELES = {
-                seguro:     { clase: 'safe',    icono: '✅', titulo: 'Enlace Seguro' },
-                precaucion: { clase: 'warning', icono: '⚠️', titulo: 'Requiere Precaución' },
-                peligroso:  { clase: 'danger',  icono: '❌', titulo: 'Enlace Peligroso' },
-            };
+        // Los datos del informe se insertan como texto, nunca como HTML.
+        resultDiv.replaceChildren(res.error ? renderAviso(res) : renderInforme(res));
+        resultDiv.focus();
 
-            // Fall back on the older boolean if the response predates `nivel`.
-            const nivel = NIVELES[res.nivel] ?? (res.seguro ? NIVELES.seguro : NIVELES.peligroso);
-
-            resultDiv.className = nivel.clase;
-            resultDiv.innerHTML = `
-                <div class="verdict-content">
-                    <span class="icon">${nivel.icono}</span>
-                    <h2>${nivel.titulo}</h2>
-                    <p>${res.motivo}</p>
-                    <button id="resetBtn" class="secondary-btn">Escanear otro enlace</button>
-                </div>
-            `;
-        }
-
-        // Configurar botón de retorno
         document.getElementById('resetBtn')?.addEventListener('click', () => {
             resultDiv.classList.add('hidden');
+            resultDiv.replaceChildren();
             inputContainer.classList.remove('hidden');
-            
-            // Si fue error de formato, mantenemos el texto para que el usuario solo lo corrija
-            if (!res.error) {
-                input.value = "";
-            }
+
+            // Si fue un error de formato, mantenemos el texto para que solo lo corrija.
+            if (!res.error) input.value = '';
             input.focus();
         });
+    }
+
+    btn?.addEventListener('click', escanear);
+    input.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Enter') escanear();
     });
 </script>
 
-<style>
+<style is:global>
     .hidden { display: none; }
-    
-    .verdict-content { padding: 1rem; }
-    .icon { font-size: 3rem; display: block; margin-bottom: 1rem; }
-    
-    .info { color: #3b82f6; padding: 2rem; }
-    
-    /* Estilo para Errores de Formato (Naranja) */
-    .warning {
-        border: 2px solid #f39c12;
-        background: rgba(243, 156, 18, 0.1);
-        padding: 2rem;
-        border-radius: 12px;
-        color: #f39c12;
-    }
+    #result:focus { outline: none; }
 
-    .safe { 
-        border: 2px solid #2ecc71; 
-        background: rgba(46, 204, 113, 0.1); 
-        padding: 2rem; 
-        border-radius: 12px; 
+    .loader {
+        border: 4px solid #334155;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 1rem auto;
     }
-    
-    .danger { 
-        border: 2px solid #ff4d4d; 
-        background: rgba(255, 77, 77, 0.1); 
-        padding: 2rem; 
-        border-radius: 12px; 
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .cargando-texto { color: #93c5fd; }
+
+    .informe {
+        text-align: left;
+        border: 2px solid var(--borde-nivel, #334155);
+        background: var(--fondo-nivel, transparent);
+        border-radius: 12px;
+        padding: 1.25rem;
     }
+    .informe-seguro { --borde-nivel: #2ecc71; --fondo-nivel: rgba(46, 204, 113, 0.08); }
+    .informe-precaucion { --borde-nivel: #f39c12; --fondo-nivel: rgba(243, 156, 18, 0.08); }
+    .informe-peligroso { --borde-nivel: #ff4d4d; --fondo-nivel: rgba(255, 77, 77, 0.08); }
+    .informe-aviso { --borde-nivel: #f39c12; --fondo-nivel: rgba(243, 156, 18, 0.08); text-align: center; }
+
+    .informe-cabecera { display: flex; align-items: center; gap: 0.75rem; }
+    .informe-aviso .informe-cabecera { justify-content: center; }
+    .informe-icono { font-size: 2.25rem; line-height: 1; }
+    .informe-cabecera h2 { margin: 0; font-size: 1.35rem; }
+    .certeza {
+        display: inline-block;
+        margin-top: 0.25rem;
+        padding: 0.1rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid currentColor;
+    }
+    .certeza-alta { color: #2ecc71; }
+    .certeza-media { color: #f39c12; }
+    .certeza-baja { color: #94a3b8; }
+    .informe-motivo { margin: 1rem 0; line-height: 1.5; }
+
+    .informe-porque h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 0 0 0.5rem; }
+    .senales { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+    .senal { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.6rem; align-items: start; }
+    .senal strong { display: block; font-size: 0.95rem; }
+    .senal p { margin: 0.15rem 0 0; font-size: 0.85rem; color: #cbd5e1; line-height: 1.45; }
+    .senal-icono {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .senal-peligro .senal-icono { background: #ff4d4d; }
+    .senal-alerta .senal-icono { background: #f39c12; }
+    .senal-bien .senal-icono { background: #2ecc71; }
+    .senal-info .senal-icono { background: #94a3b8; }
+
+    .informe-detalles { margin-top: 1rem; display: grid; gap: 0.4rem; }
+    .informe-seccion { border: 1px solid #334155; border-radius: 8px; padding: 0.5rem 0.75rem; }
+    .informe-seccion summary { cursor: pointer; font-weight: 600; }
+    .informe-seccion dl { margin: 0.5rem 0 0.25rem; display: grid; gap: 0.35rem; }
+    .informe-seccion dt { font-size: 0.75rem; color: #94a3b8; }
+    .informe-seccion dd { margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
+    .informe-seccion ul { margin: 0; padding-left: 1.1rem; }
+
+    .informe-nota { font-size: 0.8rem; color: #94a3b8; margin: 1rem 0 0; }
 
     .secondary-btn {
-        margin-top: 1.5rem;
+        margin-top: 1.25rem;
         background: #334155;
         color: white;
         border: none;
@@ -131,15 +152,5 @@ import Layout from '../layouts/Layout.astro';
         padding: 10px 20px;
         border-radius: 6px;
     }
-
-    .loader {
-        border: 4px solid #334155;
-        border-top: 4px solid #3b82f6;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 1rem;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .informe:not(.informe-aviso) .secondary-btn { display: block; margin-left: auto; margin-right: auto; }
 </style>
