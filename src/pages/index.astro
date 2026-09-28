@@ -109,9 +109,59 @@ import Layout from '../layouts/Layout.astro';
     .certeza-alta { color: #2ecc71; }
     .certeza-media { color: #f39c12; }
     .certeza-baja { color: #94a3b8; }
+    .informe-enlace {
+        margin: 0.9rem 0 0;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.6);
+        display: grid;
+        gap: 0.1rem;
+        overflow-wrap: anywhere;
+    }
+    .informe-enlace strong { font-size: 1.05rem; }
+    .informe-enlace span { font-size: 0.8rem; color: #94a3b8; }
     .informe-motivo { margin: 1rem 0; line-height: 1.5; }
 
+    .ficha {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin: 0 0 1.25rem;
+    }
+    @media (min-width: 480px) {
+        .ficha { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .ficha-dato {
+        margin: 0;
+        padding: 0.55rem 0.7rem;
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.6);
+        border-left: 3px solid var(--color-dato, #475569);
+    }
+    .ficha-dato dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+    .ficha-dato dd { margin: 0.15rem 0 0; font-weight: 600; font-size: 0.95rem; overflow-wrap: anywhere; }
+    .ficha-bien { --color-dato: #2ecc71; }
+    .ficha-alerta { --color-dato: #f39c12; }
+    .ficha-peligro { --color-dato: #ff4d4d; }
+
     .informe-porque h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 0 0 0.5rem; }
+    .informe-porque > .senales { margin-bottom: 0.5rem; }
+    .senales-plegadas { margin-top: 0.4rem; }
+    .senales-plegadas > summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .senales-plegadas > summary::-webkit-details-marker { display: none; }
+    .senales-plegadas > summary::after { content: '▸'; color: #94a3b8; }
+    .senales-plegadas[open] > summary::after { content: '▾'; }
+    .senales-plegadas > .senales { margin: 0.5rem 0 0 0.25rem; }
+    .senales-plegadas.senal-bien > summary .senal-icono { background: #2ecc71; }
+    .senales-plegadas.senal-info > summary .senal-icono { background: #94a3b8; }
     .senales { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
     .senal { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.6rem; align-items: start; }
     .senal strong { display: block; font-size: 0.95rem; }
@@ -131,13 +181,19 @@ import Layout from '../layouts/Layout.astro';
     .senal-bien .senal-icono { background: #2ecc71; }
     .senal-info .senal-icono { background: #94a3b8; }
 
-    .informe-detalles { margin-top: 1rem; display: grid; gap: 0.4rem; }
-    .informe-seccion { border: 1px solid #334155; border-radius: 8px; padding: 0.5rem 0.75rem; }
-    .informe-seccion summary { cursor: pointer; font-weight: 600; }
-    .informe-seccion dl { margin: 0.5rem 0 0.25rem; display: grid; gap: 0.35rem; }
-    .informe-seccion dt { font-size: 0.75rem; color: #94a3b8; }
-    .informe-seccion dd { margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
-    .informe-seccion ul { margin: 0; padding-left: 1.1rem; }
+    .informe-tecnico { margin-top: 1.25rem; border: 1px solid #334155; border-radius: 8px; }
+    .informe-tecnico > summary { cursor: pointer; font-weight: 600; padding: 0.6rem 0.8rem; }
+    .tecnico-cuerpo { padding: 0 0.8rem 0.8rem; display: grid; gap: 1rem; }
+    .tecnico-bloque h4 { margin: 0 0 0.4rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #93c5fd; }
+    .tecnico-bloque dl {
+        margin: 0;
+        display: grid;
+        grid-template-columns: minmax(7rem, 35%) 1fr;
+        gap: 0.3rem 0.75rem;
+    }
+    .tecnico-bloque dt { font-size: 0.8rem; color: #94a3b8; }
+    .tecnico-bloque dd { margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
+    .tecnico-bloque ul { margin: 0; padding-left: 1.1rem; }
 
     .informe-nota { font-size: 0.8rem; color: #94a3b8; margin: 1rem 0 0; }
 

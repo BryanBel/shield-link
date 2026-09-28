@@ -1,6 +1,10 @@
 /**
  * Builds the result card in the browser.
  *
+ * Layout, top to bottom: the verdict and which link it is about; one sentence of why; a
+ * compact grid of the six facts that matter most; the warnings in full, with the good
+ * news folded into a single line; and the technical detail behind one button.
+ *
  * Everything is created with createElement and text nodes, never innerHTML. The report
  * carries text that ultimately came from somewhere else — a page title, a registrar's
  * name, an engine's label — and none of it may ever be interpreted as markup.
@@ -13,6 +17,7 @@ const NIVELES = {
 };
 const ICONOS = { peligro: '✕', alerta: '!', bien: '✓', info: 'i' };
 const TIPOS = { peligro: 'Peligro', alerta: 'Alerta', bien: 'A favor', info: 'Dato' };
+const PESO = { peligro: 3, alerta: 2, bien: 1, info: 0 };
 
 function el(etiqueta, props = {}, ...hijos) {
   const nodo = document.createElement(etiqueta);
@@ -21,7 +26,9 @@ function el(etiqueta, props = {}, ...hijos) {
     if (clave === 'class') nodo.className = valor;
     else nodo.setAttribute(clave, valor);
   }
-  for (const hijo of hijos.flat()) {
+  // Children can arrive nested (a list of [dt, dd] pairs), so flatten all the way down —
+  // a single level turned each pair into the text "[object HTMLElement],[object …]".
+  for (const hijo of hijos.flat(Infinity)) {
     if (hijo === null || hijo === undefined || hijo === false) continue;
     nodo.append(hijo instanceof Node ? hijo : String(hijo));
   }
@@ -30,26 +37,138 @@ function el(etiqueta, props = {}, ...hijos) {
 
 const fecha = (iso) => (iso ? new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' }) : null);
 
-function hace(iso) {
+function edad(iso) {
   if (!iso) return null;
   const dias = Math.floor((Date.now() - new Date(iso)) / 86_400_000);
-  if (dias < 1) return 'hoy';
-  if (dias < 31) return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
-  if (dias < 365) return `hace ${Math.floor(dias / 30)} ${Math.floor(dias / 30) === 1 ? 'mes' : 'meses'}`;
+  if (dias < 1) return 'menos de un día';
+  if (dias < 31) return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+  if (dias < 365) return `${Math.floor(dias / 30)} ${Math.floor(dias / 30) === 1 ? 'mes' : 'meses'}`;
   const anios = Math.floor(dias / 365);
-  return `hace ${anios} ${anios === 1 ? 'año' : 'años'}`;
+  return `${anios} ${anios === 1 ? 'año' : 'años'}`;
 }
 
-const conEdad = (iso) => (iso ? `${fecha(iso)} (${hace(iso)})` : null);
+const conEdad = (iso) => (iso ? `${fecha(iso)} (hace ${edad(iso)})` : null);
+const hostDe = (url) => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+};
 
-/** A collapsible section of label/value rows. Rows without a value are left out. */
-function seccion(titulo, filas, abierta = false) {
+/* ---------- Ficha: the six facts at a glance ---------- */
+
+/**
+ * Each tile takes its colour from the worst signal about that subject, so the grid and
+ * the "why" list can never disagree.
+ */
+const TEMAS = {
+  motores: (id) => id.startsWith('vt-') || id.startsWith('destino-malicioso') || id.startsWith('destino-minoritario'),
+  dominio: (id) => id.startsWith('dominio-') || id.startsWith('destino-dominio') || id === 'tld-riesgo' || id === 'punycode' || id.startsWith('marca-'),
+  certificado: (id) => id === 'sin-https' || id === 'degrada-https' || id.startsWith('certificado-'),
+  destino: (id) => ['redirige-otro-dominio', 'acortador', 'cadena-larga', 'redireccion-pagina', 'respuesta-error'].includes(id),
+  servidor: (id) => id === 'red-interna' || id === 'ip-como-dominio' || id === 'puerto',
+  pagina: (id) => ['clave-a-otro-dominio', 'suplanta-marca', 'pide-clave'].includes(id),
+};
+
+function estadoDe(tema, senales) {
+  const relevantes = senales.filter((s) => TEMAS[tema](s.id) && s.tipo !== 'info');
+  if (!relevantes.length) return 'neutro';
+  return relevantes.reduce((peor, s) => (PESO[s.tipo] > PESO[peor] ? s.tipo : peor), 'bien');
+}
+
+function datosFicha(res) {
+  const d = res.detalles;
+  const r = d.reputacion;
+  const v = d.visita;
+  const saltos = d.destino.saltos.length;
+
+  const motores =
+    r.estado === 'conocido' ? `${r.maliciosos + r.sospechosos} / ${r.total}` : r.estado === 'desconocido' ? 'Sin análisis' : r.estado === 'omitido' ? 'No consultado' : 'Sin datos';
+
+  const dominio = d.dominio?.creado ? edad(d.dominio.creado) : d.dominio ? 'Sin registro público' : 'Es una IP';
+
+  const certificado = d.certificado
+    ? d.certificado.valido ? 'Válido' : 'No válido'
+    : res.senales.some((s) => s.id === 'sin-https') ? 'Sin HTTPS' : 'Sin datos';
+
+  const destino = d.destino.dominioFinal
+    ? `→ ${hostDe(d.destino.urlFinal) ?? d.destino.dominioFinal}`
+    : saltos > 1 ? `${saltos - 1} ${saltos === 2 ? 'salto' : 'saltos'}, mismo sitio` : v.visitado ? 'Sin redirecciones' : 'No visitado';
+
+  const servidor = v.bloqueado?.includes('interna')
+    ? 'Red interna'
+    : d.servidor ? [d.servidor.red ?? d.servidor.ip, d.servidor.pais ? `(${d.servidor.pais})` : null].filter(Boolean).join(' ') : 'Sin datos';
+
+  const pagina = v.prudente
+    ? 'No se abrió'
+    : d.pagina ? (d.pagina.formulariosConClave || d.pagina.camposClave ? 'Pide contraseña' : 'No pide contraseña') : 'Sin datos';
+
+  return [
+    ['motores', 'Motores', motores],
+    ['dominio', 'Antigüedad', dominio],
+    ['certificado', 'Certificado', certificado],
+    ['destino', 'Destino', destino],
+    ['servidor', 'Servidor', servidor],
+    ['pagina', 'Página', pagina],
+  ];
+}
+
+function ficha(res) {
+  return el(
+    'dl',
+    { class: 'ficha' },
+    datosFicha(res).map(([tema, etiqueta, valor]) =>
+      el('div', { class: `ficha-dato ficha-${estadoDe(tema, res.senales)}` }, el('dt', {}, etiqueta), el('dd', {}, valor)),
+    ),
+  );
+}
+
+/* ---------- Por qué: warnings in full, the rest folded ---------- */
+
+const itemSenal = (s) =>
+  el(
+    'li',
+    { class: `senal senal-${s.tipo}` },
+    el('span', { class: 'senal-icono', title: TIPOS[s.tipo], 'aria-label': TIPOS[s.tipo] }, ICONOS[s.tipo]),
+    el('div', {}, el('strong', {}, s.titulo), s.detalle ? el('p', {}, s.detalle) : null),
+  );
+
+function plegado(senales, icono, clase, texto) {
+  if (!senales.length) return null;
+  return el(
+    'details',
+    { class: `senales-plegadas ${clase}` },
+    el('summary', {}, el('span', { class: 'senal-icono', 'aria-hidden': 'true' }, icono), texto),
+    el('ul', { class: 'senales' }, senales.map(itemSenal)),
+  );
+}
+
+function porQue(senales) {
+  const graves = senales.filter((s) => s.tipo === 'peligro' || s.tipo === 'alerta');
+  const bienes = senales.filter((s) => s.tipo === 'bien');
+  const datos = senales.filter((s) => s.tipo === 'info');
+  if (!senales.length) return null;
+
+  return el(
+    'section',
+    { class: 'informe-porque', 'aria-label': 'Por qué' },
+    el('h3', {}, 'Por qué'),
+    graves.length ? el('ul', { class: 'senales' }, graves.map(itemSenal)) : null,
+    plegado(bienes, ICONOS.bien, 'senal-bien', `${bienes.length} ${bienes.length === 1 ? 'señal' : 'señales'} a favor`),
+    plegado(datos, ICONOS.info, 'senal-info', `${datos.length} ${datos.length === 1 ? 'dato más' : 'datos más'}`),
+  );
+}
+
+/* ---------- Detalles técnicos: everything, behind one button ---------- */
+
+function bloque(titulo, filas) {
   const visibles = filas.filter(([, valor]) => valor !== null && valor !== undefined && valor !== '' && !(Array.isArray(valor) && !valor.length));
   if (!visibles.length) return null;
   return el(
-    'details',
-    { class: 'informe-seccion', open: abierta ? '' : null },
-    el('summary', {}, titulo),
+    'section',
+    { class: 'tecnico-bloque' },
+    el('h4', {}, titulo),
     el(
       'dl',
       {},
@@ -61,60 +180,71 @@ function seccion(titulo, filas, abierta = false) {
   );
 }
 
-function reputacion(r) {
+function filasReputacion(r, prefijo = '') {
   if (!r) return [];
-  if (r.estado === 'desconocido') return [['VirusTotal', 'Sin análisis previos de este enlace']];
-  if (r.estado === 'omitido') return [['VirusTotal', 'No se consultó: la extensión ya es de alto riesgo']];
-  if (r.estado !== 'conocido') return [['VirusTotal', 'No disponible en este momento']];
+  const e = (texto) => `${prefijo}${texto}`;
+  if (r.estado === 'desconocido') return [[e('VirusTotal'), 'Sin análisis previos de este enlace']];
+  if (r.estado === 'omitido') return [[e('VirusTotal'), 'No se consultó: la extensión ya es de alto riesgo']];
+  if (r.estado !== 'conocido') return [[e('VirusTotal'), 'No disponible en este momento']];
   return [
-    ['Motores', `${r.maliciosos} maliciosos · ${r.sospechosos} sospechosos · ${r.inofensivos} inofensivos, de ${r.total}`],
-    ['Detecciones', r.detecciones.map((d) => `${d.motor}: ${d.resultado ?? d.categoria}`)],
-    ['Categorías', r.categorias.join(', ')],
-    ['Votos de la comunidad', r.votos.inofensivo || r.votos.malicioso ? `${r.votos.inofensivo} inofensivo · ${r.votos.malicioso} malicioso` : null],
-    ['Primer análisis', conEdad(r.primerEnvio)],
-    ['Último análisis', conEdad(r.ultimoAnalisis)],
+    [e('Motores'), `${r.maliciosos} maliciosos · ${r.sospechosos} sospechosos · ${r.inofensivos} inofensivos, de ${r.total}`],
+    [e('Detecciones'), r.detecciones.map((d) => `${d.motor}: ${d.resultado ?? d.categoria}`)],
+    [e('Categorías'), r.categorias.join(', ')],
+    [e('Votos de la comunidad'), r.votos.inofensivo || r.votos.malicioso ? `${r.votos.inofensivo} inofensivo · ${r.votos.malicioso} malicioso` : null],
+    [e('Primer análisis'), conEdad(r.primerEnvio)],
+    [e('Último análisis'), conEdad(r.ultimoAnalisis)],
   ];
 }
 
-function detalles(d) {
+function tecnico(d) {
   const saltos = d.destino.saltos;
-  const secciones = [
-    seccion('Destino', [
+  const bloques = [
+    bloque('Destino', [
       ['Enlace analizado', d.url],
       ['Recorrido', saltos.length > 1 ? saltos.map((s) => `${s.estado} · ${s.url}`) : null],
       ['Destino final', d.destino.urlFinal && d.destino.urlFinal !== d.url ? d.destino.urlFinal : null],
-      ['Cambia de dominio a', d.destino.dominioFinal],
       ['Redirecciones vistas por VirusTotal', d.destino.redireccionesConocidas],
     ]),
-    seccion('Dominio', d.dominio ? [
+    bloque('Dominio', d.dominio ? [
       ['Dominio', d.dominio.nombre],
       ['Registrado', conEdad(d.dominio.creado)],
       ['Vence', fecha(d.dominio.expira)],
       ['Registrador', d.dominio.registrador],
     ] : []),
-    seccion('Certificado', d.certificado ? [
+    bloque('Certificado', d.certificado ? [
       ['Emitido por', d.certificado.emisor],
       ['Para', d.certificado.sujeto],
       ['Válido desde', fecha(d.certificado.desde)],
       ['Válido hasta', fecha(d.certificado.hasta)],
       ['Estado', d.certificado.valido ? 'Válido' : `No válido (${d.certificado.error})`],
     ] : []),
-    seccion('Servidor', d.servidor ? [
+    bloque('Servidor', d.servidor ? [
       ['IP', d.servidor.ip],
       ['Red', d.servidor.red],
       ['Organización', d.servidor.organizacion],
       ['País', d.servidor.pais],
     ] : []),
-    seccion('Reputación', [...reputacion(d.reputacion), ...reputacion(d.reputacionDestino).map(([e, v]) => [`Destino · ${e}`, v])]),
-    seccion('Página', d.pagina ? [
+    bloque('Reputación', [...filasReputacion(d.reputacion), ...filasReputacion(d.reputacionDestino, 'Destino · ')]),
+    bloque('Página', d.pagina ? [
       ['Título', d.pagina.titulo],
       ['Formularios', d.pagina.formularios ? `${d.pagina.formularios} (${d.pagina.formulariosConClave} piden contraseña)` : 'Ninguno'],
       ['Envía contraseñas a', d.pagina.destinosDeClave],
       ['Iframes', d.pagina.iframes || null],
       ['Scripts de otros dominios', d.pagina.scriptsExternos],
     ] : []),
-  ];
-  return secciones.filter(Boolean);
+  ].filter(Boolean);
+
+  if (!bloques.length) return null;
+  return el('details', { class: 'informe-tecnico' }, el('summary', {}, 'Ver detalles técnicos'), el('div', { class: 'tecnico-cuerpo' }, bloques));
+}
+
+/* ---------- The card ---------- */
+
+/** Which link the verdict is about: the host first, since that is who you would be talking to. */
+function enlace(url) {
+  const host = url ? hostDe(url) : null;
+  if (!host) return null;
+  return el('p', { class: 'informe-enlace' }, el('strong', {}, host), el('span', {}, url));
 }
 
 function nota(res) {
@@ -131,6 +261,7 @@ function nota(res) {
 export function renderInforme(res) {
   const nivel = NIVELES[res.nivel] ?? (res.seguro ? NIVELES.seguro : NIVELES.peligroso);
   const senales = res.senales ?? [];
+  const completo = Boolean(res.detalles);
 
   return el(
     'article',
@@ -141,27 +272,11 @@ export function renderInforme(res) {
       el('span', { class: 'informe-icono', 'aria-hidden': 'true' }, nivel.icono),
       el('div', {}, el('h2', {}, nivel.titulo), res.certeza ? el('span', { class: `certeza certeza-${res.certeza}` }, `Certeza ${res.certeza}`) : null),
     ),
+    enlace(res.detalles?.url),
     el('p', { class: 'informe-motivo' }, res.motivo),
-    senales.length
-      ? el(
-          'section',
-          { class: 'informe-porque', 'aria-label': 'Por qué' },
-          el('h3', {}, 'Por qué'),
-          el(
-            'ul',
-            { class: 'senales' },
-            senales.map((s) =>
-              el(
-                'li',
-                { class: `senal senal-${s.tipo}` },
-                el('span', { class: 'senal-icono', title: TIPOS[s.tipo], 'aria-label': TIPOS[s.tipo] }, ICONOS[s.tipo]),
-                el('div', {}, el('strong', {}, s.titulo), s.detalle ? el('p', {}, s.detalle) : null),
-              ),
-            ),
-          ),
-        )
-      : null,
-    res.detalles ? el('div', { class: 'informe-detalles' }, detalles(res.detalles)) : null,
+    completo ? ficha({ ...res, senales }) : null,
+    porQue(senales),
+    completo ? tecnico(res.detalles) : null,
     nota(res),
     el('button', { class: 'secondary-btn', id: 'resetBtn', type: 'button' }, 'Escanear otro enlace'),
   );
