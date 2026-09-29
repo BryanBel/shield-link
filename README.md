@@ -144,7 +144,7 @@ removed. They expire: 7 days for a safe verdict, 1 for caution, 30 for dangerous
 verdict is a snapshot and domains change hands.
 
 Because the sources run in parallel, a full investigation is quick. Measured in production
-from a client whose bare round trip to the site is 80 ms: a fresh analysis took 402 ms and
+from a client whose bare round trip to the site is 80 ms: a fresh analysis took 417 ms and
 a cached one 91 ms (medians of 4 and 12). The first request after five idle minutes also
 wakes the database, which cost about 600 ms extra in an earlier, single measurement.
 
@@ -155,7 +155,7 @@ are never counted.
 
 ## Designs
 
-The page comes in five styles — Classic, Y2K, Cyberpunk, Clay and Vaporwave. The round dice
+The page comes in six styles — Classic, Y2K, Cyberpunk, Clay, Vaporwave and Vista Aero. The round dice
 button switches to a random one: the new style grows out of the button in a circle, and
 the dice hops to a free spot somewhere else on the screen. The chosen style is remembered
 and applied before the first paint, so the page never flashes the default look. Every
@@ -178,7 +178,7 @@ gets no sparkles, blinking cursors or moving grids.
 
 | Layer | Choice | Why |
 | ----- | ------ | --- |
-| Framework | [Astro](https://astro.build) 7, SSR on [Vercel](https://vercel.com) | The page is static except for one endpoint; Astro ships no JavaScript for the rest |
+| Framework | [Astro](https://astro.build) 7, SSR on [Vercel](https://vercel.com) | The page is prerendered and one endpoint does the work; the browser gets a single 21 KB script for the report and the styles |
 | Database | PostgreSQL on [Neon](https://neon.tech) | An analysis cache and a per-client counter, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
 | Threat intelligence | [VirusTotal API v3](https://www.virustotal.com) | Free tier, called from the server so the key never ships to a browser |
 | Package manager | [pnpm](https://pnpm.io) | |
@@ -222,6 +222,7 @@ against clickjacking, plus `nosniff`, a `Referrer-Policy` and a `Permissions-Pol
 pnpm install
 cp .env.example .env    # fill in the values below
 pnpm dev                # http://localhost:4321
+pnpm test               # analysis logic, input rules and the style contract
 ```
 
 Create the application role once, as the database owner, then apply `schema.sql` with

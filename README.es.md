@@ -150,7 +150,7 @@ veredicto es una foto y los dominios cambian de dueño.
 
 Como las fuentes corren en paralelo, una investigación completa es rápida. Medido en
 producción desde un cliente cuyo viaje de ida y vuelta al sitio, sin más, es de 80 ms: un
-análisis nuevo tardó 402 ms y uno en caché 91 ms (medianas de 4 y de 12). La primera
+análisis nuevo tardó 417 ms y uno en caché 91 ms (medianas de 4 y de 12). La primera
 consulta después de cinco minutos sin uso además despierta la base, lo que costó unos
 600 ms extra en una medición anterior y única.
 
@@ -161,7 +161,7 @@ nuevos tienen un límite por cliente: 4 por minuto y 50 por día. Pasado el lím
 
 ## Diseños
 
-La página viene en cinco estilos: Clásico, Y2K, Cyberpunk, Clay y Vaporwave. El dado redondo
+La página viene en seis estilos: Clásico, Y2K, Cyberpunk, Clay, Vaporwave y Vista Aero. El dado redondo
 cambia a uno al azar: el estilo nuevo se expande en círculo desde el botón, y el dado salta a
 un lugar libre en otra parte de la pantalla. El estilo elegido se recuerda y se aplica antes
 del primer pintado, así que la página nunca parpadea con el diseño por defecto. Cada estilo
@@ -184,7 +184,7 @@ menos movimiento no ve destellos, cursores que parpadean ni grillas que se mueve
 
 | Capa | Elección | Por qué |
 | ---- | -------- | ------- |
-| Framework | [Astro](https://astro.build) 7, SSR en [Vercel](https://vercel.com) | La página es estática salvo por un endpoint; Astro no envía JavaScript para el resto |
+| Framework | [Astro](https://astro.build) 7, SSR en [Vercel](https://vercel.com) | La página se genera de antemano y un endpoint hace el trabajo; el navegador recibe un solo script de 21 KB para el informe y los estilos |
 | Base de datos | PostgreSQL en [Neon](https://neon.tech) | Una caché de análisis y un contador por cliente, accesibles solo desde el servidor. El driver serverless de Neon habla por HTTP, lo que encaja con una función de Vercel que vive una sola petición — un pool ahí abre una conexión por invocación |
 | Inteligencia de amenazas | [VirusTotal API v3](https://www.virustotal.com) | Plan gratuito, llamado desde el servidor para que la clave nunca llegue al navegador |
 | Gestor de paquetes | [pnpm](https://pnpm.io) | |
@@ -230,6 +230,7 @@ clickjacking, más `nosniff`, una `Referrer-Policy` y una `Permissions-Policy`.
 pnpm install
 cp .env.example .env    # completa los valores de abajo
 pnpm dev                # http://localhost:4321
+pnpm test               # lógica del análisis, reglas de entrada y contrato de estilos
 ```
 
 Crea el rol de la aplicación una vez, como owner de la base, y luego aplica `schema.sql` con

@@ -98,8 +98,10 @@ const solapa = (a, b, holgura) =>
 
 /**
  * A random spot that covers neither the card nor the style bar, and lands far enough from
- * the previous one that the hop is obvious. No grid: every hop is a fresh throw. If the
- * card leaves no free room (a long report on a phone), the least bad throw wins.
+ * the previous one that the hop is obvious. No grid: every hop is a fresh throw. If only
+ * near spots are free, the first free one wins. If the card leaves no room at all — a long
+ * report on a phone — the dice goes to a corner, where a floating button is expected,
+ * rather than anywhere on top of the text.
  */
 function lugarAlAzar(dado) {
   const lado = dado.offsetWidth || 52;
@@ -117,7 +119,10 @@ function lugarAlAzar(dado) {
     if (libre && lejos) return punto;
     if (libre && !mejor) mejor = punto;
   }
-  return mejor ?? { x: MARGEN + Math.random() * ancho, y: MARGEN + Math.random() * alto, lado };
+  if (mejor) return mejor;
+  const esquinas = [[MARGEN + ancho, MARGEN + alto], [MARGEN, MARGEN + alto], [MARGEN + ancho, MARGEN]];
+  const [x, y] = esquinas[Math.floor(Math.random() * esquinas.length)];
+  return { x, y, lado };
 }
 
 function colocarDado(punto) {
