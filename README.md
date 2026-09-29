@@ -6,7 +6,7 @@ A URL safety scanner. Paste a link, get a verdict before you click it.
 
 **Live at [shield-link.vercel.app](https://shield-link.vercel.app)**
 
-![The Shield Link scanner](docs/scanner.webp)
+https://github.com/user-attachments/assets/d51cb654-d580-4068-9a76-d4556720805b
 
 Built as a cybersecurity project for the Computer Engineering programme at Universidad
 Alejandro de Humboldt.
