@@ -7,7 +7,7 @@ abrirlo.
 
 **En vivo en [shield-link.vercel.app](https://shield-link.vercel.app)**
 
-![El escáner de Shield Link](docs/scanner.webp)
+https://github.com/user-attachments/assets/c69e69d0-49f2-4a90-b3ca-5bca7775d738
 
 Proyecto de ciberseguridad para Ingeniería en Informática, Universidad Alejandro de
 Humboldt.
