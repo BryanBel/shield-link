@@ -1,0 +1,152 @@
+/*
+ * Vista Aero — Windows Vista, 2007: the "Aurora" wallpaper's flowing ribbons of green and
+ * blue light, windows framed in translucent blurred glass with a glossy sheen across the
+ * top, glossy two-tone buttons, and the round Start orb. As in Vista, only the frame is
+ * glass — the content stays solid, so text contrast is the one the contract measures.
+ *
+ * Segoe UI is Windows' own typeface and cannot be self-hosted; Windows shows it natively,
+ * and every other system falls back to its UI font.
+ */
+
+[data-estilo="vista"][data-modo="oscuro"] {
+  --fondo: #021826;
+  --fondo-decoracion: radial-gradient(ellipse 60% 45% at 18% 78%, rgba(0, 230, 160, 0.38), transparent 70%), radial-gradient(ellipse 55% 45% at 78% 28%, rgba(0, 140, 255, 0.42), transparent 70%), radial-gradient(ellipse 40% 30% at 55% 60%, rgba(120, 255, 210, 0.16), transparent 70%), linear-gradient(180deg, #032b45 0%, #01131f 100%);
+  --superficie: #0f2233;
+  --superficie-decoracion: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 38%);
+  --superficie-2: #16304a;
+  --borde: #3b6b91;
+  --texto: #f2f9ff;
+  --texto-suave: #cfe6f7;
+  --texto-tenue: #9cc3e0;
+  --acento: #1273b8;
+  --acento-texto: #ffffff;
+  --boton-fondo: linear-gradient(180deg, #8ad8ff 0%, #3aa6e6 48%, #1273b8 50%, #1f8fd6 100%);
+  --enlace: #7fd0ff;
+  --seguro: #5ee6a0;
+  --precaucion: #ffcb47;
+  --peligro: #ff7b7b;
+  --neutro: #9cc3e0;
+  --icono-texto: #04121d;
+  --seguro-fondo: rgba(94, 230, 160, 0.07);
+  --precaucion-fondo: rgba(255, 203, 71, 0.07);
+  --peligro-fondo: rgba(255, 123, 123, 0.08);
+  --fuente-titulo: 'Segoe UI', 'Selawik', system-ui, sans-serif;
+  --fuente-texto: 'Segoe UI', 'Selawik', system-ui, sans-serif;
+  --titulo-peso: 300;
+  --titulo-espaciado: 0.01em;
+  --titulo-mayusculas: none;
+  --radio: 10px;
+  --radio-control: 4px;
+  --grosor-borde: 1px;
+  --sombra-tarjeta: 0 0 0 1px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 22px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 160, 255, 0.18);
+  --sombra-control: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 1px 3px rgba(0, 0, 0, 0.45);
+  --brillo-titulo: 0 0 14px rgba(120, 210, 255, 0.55);
+}
+
+[data-estilo="vista"][data-modo="claro"] {
+  --fondo: #a9dcf7;
+  /* Aero by day: an aqua sky over fresh green, with the same ribbons of light. */
+  --fondo-decoracion: radial-gradient(ellipse 60% 45% at 20% 80%, rgba(90, 230, 150, 0.55), transparent 70%), radial-gradient(ellipse 55% 45% at 80% 25%, rgba(255, 255, 255, 0.75), transparent 70%), radial-gradient(ellipse 45% 35% at 60% 58%, rgba(0, 170, 255, 0.28), transparent 70%), linear-gradient(180deg, #5ec2f2 0%, #bfeaff 55%, #9fe6b8 100%);
+  --superficie: #ffffff;
+  --superficie-decoracion: linear-gradient(180deg, rgba(210, 236, 255, 0.55) 0%, rgba(255, 255, 255, 0) 30%);
+  --superficie-2: #eef6fc;
+  --borde: #8fb8d6;
+  --texto: #0b2233;
+  --texto-suave: #23445d;
+  --texto-tenue: #466781;
+  --acento: #0f66a8;
+  --acento-texto: #ffffff;
+  --boton-fondo: linear-gradient(180deg, #8ad8ff 0%, #3aa6e6 48%, #0f66a8 50%, #1a86cc 100%);
+  --enlace: #0b5d9b;
+  --seguro: #0f7a3f;
+  --precaucion: #9a4a00;
+  --peligro: #b3261e;
+  --neutro: #466781;
+  --icono-texto: #ffffff;
+  --seguro-fondo: rgba(15, 122, 63, 0.05);
+  --precaucion-fondo: rgba(154, 74, 0, 0.05);
+  --peligro-fondo: rgba(179, 38, 30, 0.05);
+  --fuente-titulo: 'Segoe UI', 'Selawik', system-ui, sans-serif;
+  --fuente-texto: 'Segoe UI', 'Selawik', system-ui, sans-serif;
+  --titulo-peso: 300;
+  --titulo-espaciado: 0.01em;
+  --titulo-mayusculas: none;
+  --radio: 10px;
+  --radio-control: 4px;
+  --grosor-borde: 1px;
+  --sombra-tarjeta: 0 0 0 1px rgba(20, 60, 100, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 22px 60px rgba(10, 60, 110, 0.35), 0 0 40px rgba(0, 170, 255, 0.2);
+  --sombra-control: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(10, 60, 110, 0.35);
+  --brillo-titulo: 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 16px rgba(0, 150, 255, 0.35);
+}
+
+/* The Aurora ribbons, drifting slowly across the wallpaper. */
+[data-estilo="vista"] body::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 38%, rgba(140, 255, 210, 0.22) 44%, transparent 50%),
+    linear-gradient(122deg, transparent 52%, rgba(90, 190, 255, 0.24) 58%, transparent 64%),
+    linear-gradient(108deg, transparent 64%, rgba(170, 255, 230, 0.14) 69%, transparent 74%);
+  background-size: 180% 180%;
+  animation: vista-flujo 24s ease-in-out infinite alternate;
+}
+[data-estilo="vista"][data-modo="claro"] body::before {
+  background:
+    linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.55) 44%, transparent 50%),
+    linear-gradient(122deg, transparent 52%, rgba(255, 255, 255, 0.4) 58%, transparent 64%),
+    linear-gradient(108deg, transparent 64%, rgba(120, 230, 170, 0.3) 69%, transparent 74%);
+  background-size: 180% 180%;
+}
+@keyframes vista-flujo {
+  from { background-position: 0% 30%; }
+  to { background-position: 100% 70%; }
+}
+
+/*
+ * The window: a thick frame of blurred glass around solid content, with the glossy
+ * reflection Vista drew across the top of every window.
+ */
+[data-estilo="vista"] main {
+  position: relative;
+  z-index: 1;
+  border: 9px solid rgba(160, 205, 235, 0.28);
+  background-clip: padding-box;
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+[data-estilo="vista"][data-modo="claro"] main { border-color: rgba(255, 255, 255, 0.45); }
+[data-estilo="vista"] main::before {
+  content: '';
+  position: absolute;
+  inset: -9px -9px auto -9px;
+  height: 46px;
+  border-radius: 10px 10px 0 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.08) 55%, rgba(255, 255, 255, 0) 56%);
+}
+
+/* Glossy two-tone buttons: the sharp highlight line halfway down. */
+[data-estilo="vista"] .secondary-btn,
+[data-estilo="vista"] .barra-boton {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 49%, rgba(0, 0, 0, 0.06) 50%, rgba(255, 255, 255, 0.05) 100%);
+}
+[data-estilo="vista"][data-modo="claro"] .secondary-btn,
+[data-estilo="vista"][data-modo="claro"] .barra-boton {
+  background-image: linear-gradient(180deg, #ffffff 0%, #f1f7fc 49%, #dde9f3 50%, #eaf3fa 100%);
+}
+[data-estilo="vista"] button:hover { filter: brightness(1.1) drop-shadow(0 0 6px rgba(80, 190, 255, 0.55)); }
+
+/* The dice becomes the Start orb. */
+[data-estilo="vista"] .dado {
+  color: #ffffff;
+  border: 1px solid rgba(0, 20, 40, 0.8);
+  background: radial-gradient(circle at 50% 30%, #bff3ff 0%, #3fb2f0 38%, #0d5f9c 72%, #062f52 100%);
+  box-shadow: 0 0 14px rgba(0, 180, 255, 0.65), inset 0 2px 5px rgba(255, 255, 255, 0.75), inset 0 -3px 6px rgba(0, 0, 0, 0.35);
+}
+[data-estilo="vista"] .dado svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6)); }
+
+/* Pista del menú secreto: esta vez, el nombre del código. */
+[data-estilo="vista"] .pista::after { content: '⊞ konami'; }

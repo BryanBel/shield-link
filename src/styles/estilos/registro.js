@@ -11,6 +11,7 @@ export const ESTILOS = [
   { id: 'cyberpunk', nombre: 'Cyberpunk', muestras: ['#05070d', '#00ff9c', '#ff2e88', '#22d3ee'] },
   { id: 'clay', nombre: 'Clay', muestras: ['#f4f1fa', '#a78bfa', '#7c3aed', '#db2777'] },
   { id: 'vaporwave', nombre: 'Vaporwave', muestras: ['#ff71ce', '#01cdfe', '#05ffa1', '#b967ff'] },
+  { id: 'vista', nombre: 'Vista Aero', muestras: ['#032b45', '#1f8fd6', '#8ad8ff', '#00e6a0'] },
 ];
 
 export const ESTILO_INICIAL = ESTILOS[0].id;
