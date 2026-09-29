@@ -335,26 +335,31 @@ dialog .dialogo-url { font-size: 0.8rem; color: var(--texto-tenue); overflow-wra
 
 svg[hidden] { display: none; }
 
-/* Positioned by temas.js through --x / --y, and hops somewhere else after every style. */
+/*
+ * Positioned by temas.js through --x / --y, and hops somewhere else after every style.
+ * It moves with the `translate` property, not `transform`: styles are free to use
+ * transform on buttons (Clay squashes them when pressed) without flinging the dice to the
+ * corner mid-click.
+ */
 .dado {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 60;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   padding: 0;
   display: grid;
   place-items: center;
   color: var(--texto);
   background: var(--superficie);
   border: var(--grosor-borde) solid var(--borde);
-  border-radius: min(var(--radio-control), 16px);
+  border-radius: 50%;
   box-shadow: var(--sombra-control);
-  transform: translate(var(--x, calc(100vw - 64px)), var(--y, 16px));
+  translate: var(--x, calc(100vw - 68px)) var(--y, 16px);
 }
 .dado:not(.listo) { opacity: 0; }
-.dado.listo { transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s; }
+.dado.listo { transition: translate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.12s, filter 0.2s; }
 .dado svg { width: 24px; height: 24px; transition: transform 0.3s; }
 .dado:hover svg { transform: rotate(-15deg) scale(1.08); }
 .dado:disabled { cursor: progress; }

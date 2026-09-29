@@ -25,11 +25,11 @@ const { title } = Astro.props;
 			style against the registry once the page loads.
 		-->
 		<script is:inline>(function () {
-	var raiz = document.documentElement, estilo = null, modo = null, premio = null;
-	try { estilo = localStorage.getItem('shieldlink:estilo'); modo = localStorage.getItem('shieldlink:modo'); premio = localStorage.getItem('shieldlink:menu'); } catch (e) {}
+	var raiz = document.documentElement, estilo = null;
+	try { estilo = localStorage.getItem('shieldlink:estilo'); } catch (e) {}
 	if (estilo && /^[a-z0-9-]+$/.test(estilo)) raiz.dataset.estilo = estilo;
-	/* El modo claro es parte del easter egg: sin desbloquearlo, todo es oscuro. */
-	raiz.dataset.modo = premio === '1' && modo === 'claro' ? 'claro' : 'oscuro';
+	/* El modo claro es parte del easter egg y dura lo que dura la visita: al cargar, oscuro. */
+	raiz.dataset.modo = 'oscuro';
 })();</script>
 	</head>
 	<body>

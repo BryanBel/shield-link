@@ -155,11 +155,12 @@ are never counted.
 
 ## Designs
 
-The page comes in five styles — Classic, Y2K, Cyberpunk, Clay and Vaporwave — each in light
-and dark mode. The dice button in the corner switches to a random one; the sun and moon
-switch the mode, which otherwise follows the system. The choice is remembered, and applied
-before the first paint so the page never flashes the default look. There is also something
-hidden for the curious.
+The page comes in five styles — Classic, Y2K, Cyberpunk, Clay and Vaporwave. The round dice
+button switches to a random one: the new style grows out of the button in a circle, and
+the dice hops to a free spot somewhere else on the screen. The chosen style is remembered
+and applied before the first paint, so the page never flashes the default look. Every
+style also has a light mode, but that — and a few other things — are for the curious to
+find.
 
 Every style is a set of values for the same variables, defined in
 [`src/styles/estilos/_contrato.css`](src/styles/estilos/_contrato.css); the components only

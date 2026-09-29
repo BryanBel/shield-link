@@ -8,16 +8,17 @@ import { ESTILOS } from '../styles/estilos/registro.js';
  * this module handles everything after:
  *
  * - The dice. Pressing it grows the next style out of the button in a circle, then the
- *   button hops somewhere else on the screen.
+ *   button hops to a random free spot on the screen.
  * - The easter egg. The Konami code (↑↑↓↓←→←→BA), or seven taps on the shield on a phone,
  *   opens a chest in the middle of the screen. The prize: a style bar at the top — current
- *   style, the full list, and light mode, which does not exist until then.
+ *   style, the full list, and light mode, which does not exist until then. The prize lasts
+ *   for the visit: after a reload the page is dark again and the bar needs the code.
  *
- * localStorage can be unavailable (private windows, blocked storage); every access is
- * guarded, so the page still works and simply forgets on reload.
+ * Only the chosen style is remembered. localStorage can be unavailable (private windows,
+ * blocked storage); every access is guarded, so the page still works and simply forgets.
  */
 
-const CLAVES = { estilo: 'shieldlink:estilo', modo: 'shieldlink:modo', premio: 'shieldlink:menu' };
+const CLAVES = { estilo: 'shieldlink:estilo' };
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 const TOQUES = 7;
 const VENTANA_TOQUES_MS = 3000;
@@ -40,7 +41,7 @@ const guardar = (clave, valor) => {
     /* sin almacenamiento: el cambio vale solo para esta visita */
   }
 };
-const premiado = () => leer(CLAVES.premio) === '1';
+let premiado = false;
 const nombreDe = (id) => ESTILOS.find((e) => e.id === id)?.nombre ?? id;
 
 /* ---------- Applying ---------- */
@@ -54,9 +55,8 @@ function aplicarEstilo(id) {
 
 function aplicarModo(modo) {
   // Light mode is part of the prize.
-  if (modo === 'claro' && !premiado()) return;
+  if (modo === 'claro' && !premiado) return;
   raiz.dataset.modo = modo;
-  guardar(CLAVES.modo, modo);
   actualizarBarra();
 }
 
@@ -90,33 +90,63 @@ async function ondaDesde(origen, cambio) {
 
 /* ---------- The dice ---------- */
 
-let lugarDado = 1;
+/** Where the dice sits, as fractions of the free width and height, so a resize keeps it in place. */
+let posicionDado = null;
 
-/** Where the dice can sit: the corners, and the middle of each side on wide screens. */
-function lugares() {
-  const dado = document.getElementById('btnDado');
-  const lado = dado?.offsetWidth ?? 48;
-  const derecha = innerWidth - lado - MARGEN;
-  const abajo = innerHeight - lado - MARGEN;
-  const medio = innerHeight / 2 - lado / 2;
-  const esquinas = [[MARGEN, MARGEN], [derecha, MARGEN], [derecha, abajo], [MARGEN, abajo]];
-  return innerWidth >= 960 ? [...esquinas, [derecha, medio], [MARGEN, medio]] : esquinas;
+const solapa = (a, b, holgura) =>
+  a.x < b.right + holgura && a.x + a.lado > b.left - holgura && a.y < b.bottom + holgura && a.y + a.lado > b.top - holgura;
+
+/**
+ * A random spot that covers neither the card nor the style bar, and lands far enough from
+ * the previous one that the hop is obvious. No grid: every hop is a fresh throw. If the
+ * card leaves no free room (a long report on a phone), the least bad throw wins.
+ */
+function lugarAlAzar(dado) {
+  const lado = dado.offsetWidth || 52;
+  const ancho = innerWidth - lado - 2 * MARGEN;
+  const alto = innerHeight - lado - 2 * MARGEN;
+  const obstaculos = [document.querySelector('main'), barra].filter(Boolean).map((e) => e.getBoundingClientRect());
+  const anterior = posicionDado ? { x: MARGEN + posicionDado.fx * ancho, y: MARGEN + posicionDado.fy * alto } : null;
+  const distanciaMinima = Math.min(innerWidth, innerHeight) * 0.35;
+
+  let mejor = null;
+  for (let intento = 0; intento < 80; intento++) {
+    const punto = { x: MARGEN + Math.random() * ancho, y: MARGEN + Math.random() * alto, lado };
+    const libre = !obstaculos.some((o) => solapa(punto, o, 12));
+    const lejos = !anterior || Math.hypot(punto.x - anterior.x, punto.y - anterior.y) >= distanciaMinima;
+    if (libre && lejos) return punto;
+    if (libre && !mejor) mejor = punto;
+  }
+  return mejor ?? { x: MARGEN + Math.random() * ancho, y: MARGEN + Math.random() * alto, lado };
 }
 
-function ponerDado(indice) {
+function colocarDado(punto) {
   const dado = document.getElementById('btnDado');
-  const opciones = lugares();
-  lugarDado = indice % opciones.length;
-  const [x, y] = opciones[lugarDado];
-  dado?.style.setProperty('--x', `${x}px`);
-  dado?.style.setProperty('--y', `${y}px`);
+  if (!dado) return;
+  const ancho = Math.max(1, innerWidth - punto.lado - 2 * MARGEN);
+  const alto = Math.max(1, innerHeight - punto.lado - 2 * MARGEN);
+  posicionDado = { fx: (punto.x - MARGEN) / ancho, fy: (punto.y - MARGEN) / alto };
+  dado.style.setProperty('--x', `${punto.x}px`);
+  dado.style.setProperty('--y', `${punto.y}px`);
 }
 
 function saltarDado() {
-  const opciones = lugares();
-  let siguiente = lugarDado;
-  while (opciones.length > 1 && siguiente === lugarDado) siguiente = Math.floor(Math.random() * opciones.length);
-  ponerDado(siguiente);
+  const dado = document.getElementById('btnDado');
+  if (dado) colocarDado(lugarAlAzar(dado));
+}
+
+/** On resize, keep the same relative spot; if the card now covers it, throw again. */
+function reubicarDado() {
+  const dado = document.getElementById('btnDado');
+  if (!dado || !posicionDado) return;
+  const lado = dado.offsetWidth || 52;
+  const punto = {
+    x: MARGEN + posicionDado.fx * (innerWidth - lado - 2 * MARGEN),
+    y: MARGEN + posicionDado.fy * (innerHeight - lado - 2 * MARGEN),
+    lado,
+  };
+  const main = document.querySelector('main')?.getBoundingClientRect();
+  colocarDado(main && solapa(punto, main, 12) ? lugarAlAzar(dado) : punto);
 }
 
 async function tirarDado() {
@@ -319,9 +349,8 @@ function abrirCofre() {
 
 function descubrir() {
   if (document.querySelector('dialog.cofre')) return;
-  const primeraVez = !premiado();
-  guardar(CLAVES.premio, '1');
-  if (primeraVez) console.log('%c🎉 Easter egg descubierto: barra de estilos y modo claro desbloqueados.', 'font-weight:bold');
+  if (!premiado) console.log('%c🎉 Easter egg descubierto: barra de estilos y modo claro desbloqueados.', 'font-weight:bold');
+  premiado = true;
   abrirCofre();
 }
 
@@ -360,16 +389,17 @@ export function iniciarTemas() {
   // The inline script only checks the saved id's shape; a style removed from the registry
   // falls back to the first one here.
   if (!ESTILOS.some((e) => e.id === raiz.dataset.estilo)) aplicarEstilo(ESTILOS[0].id);
-  if (!premiado()) raiz.dataset.modo = 'oscuro';
+  raiz.dataset.modo = 'oscuro';
 
   const dado = document.getElementById('btnDado');
-  ponerDado(lugarDado);
-  // Placed before it becomes visible, so it does not slide in from the corner on load.
+  if (dado) colocarDado(lugarAlAzar(dado));
+  // Placed before it becomes visible, so it does not slide in from a corner on load.
   requestAnimationFrame(() => dado?.classList.add('listo'));
   dado?.addEventListener('click', tirarDado);
-  addEventListener('resize', () => ponerDado(lugarDado));
-
-  if (premiado()) mostrarBarra();
+  addEventListener('resize', reubicarDado);
+  // The card grows when a report appears; if it now covers the dice, the dice moves.
+  const main = document.querySelector('main');
+  if (main && 'ResizeObserver' in window) new ResizeObserver(reubicarDado).observe(main);
 
   escucharKonami();
   escucharToques();

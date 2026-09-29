@@ -161,11 +161,12 @@ nuevos tienen un límite por cliente: 4 por minuto y 50 por día. Pasado el lím
 
 ## Diseños
 
-La página viene en cinco estilos —Clásico, Y2K, Cyberpunk, Clay y Vaporwave—, cada uno en
-modo claro y oscuro. El dado de la esquina cambia a uno al azar; el sol y la luna cambian el
-modo, que si no sigue al del sistema. La elección se recuerda y se aplica antes del primer
-pintado, así que la página nunca parpadea con el diseño por defecto. También hay algo
-escondido para los curiosos.
+La página viene en cinco estilos: Clásico, Y2K, Cyberpunk, Clay y Vaporwave. El dado redondo
+cambia a uno al azar: el estilo nuevo se expande en círculo desde el botón, y el dado salta a
+un lugar libre en otra parte de la pantalla. El estilo elegido se recuerda y se aplica antes
+del primer pintado, así que la página nunca parpadea con el diseño por defecto. Cada estilo
+tiene además un modo claro, pero eso —y alguna otra cosa— queda para que lo descubran los
+curiosos.
 
 Cada estilo es un conjunto de valores para las mismas variables, definidas en
 [`src/styles/estilos/_contrato.css`](src/styles/estilos/_contrato.css); los componentes solo
