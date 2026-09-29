@@ -8,6 +8,9 @@ A URL safety scanner. Paste a link, get a verdict before you click it.
 
 https://github.com/user-attachments/assets/d51cb654-d580-4068-9a76-d4556720805b
 
+*22 seconds, built from a real report for `aka.ms/wsl`: the link breaks into its domain, certificate and
+destination, and each finding folds back into the verdict.*
+
 Built as a cybersecurity project for the Computer Engineering programme at Universidad
 Alejandro de Humboldt.
 
@@ -75,6 +78,8 @@ what can be checked:
   example, is predictive: it flags domains whose patterns could be used in attacks before
   any attack happens. A lone detection from it is reported as a prediction, not as an
   attack found.
+
+![The report for google.com: safe, medium certainty, with both detections explained as an almost certain false positive](docs/informe.webp)
 
 ### How sure it is
 
@@ -163,6 +168,8 @@ and applied before the first paint, so the page never flashes the default look. 
 style also has a light mode, but that — and a few other things — are for the curious to
 find.
 
+![The start screen in each of the six styles](docs/estilos.webp)
+
 Every style is a set of values for the same variables, defined in
 [`src/styles/estilos/_contrato.css`](src/styles/estilos/_contrato.css); the components only
 read those variables. Adding a style is one CSS file in that folder and one line in
@@ -179,7 +186,7 @@ gets no sparkles, blinking cursors or moving grids.
 
 | Layer | Choice | Why |
 | ----- | ------ | --- |
-| Framework | [Astro](https://astro.build) 7, SSR on [Vercel](https://vercel.com) | The page is prerendered and one endpoint does the work; the browser gets a single 21 KB script for the report and the styles |
+| Framework | [Astro](https://astro.build) 7, SSR on [Vercel](https://vercel.com) | The page is prerendered and one endpoint does the work; the browser gets a single 22 KB script for the report and the styles |
 | Database | PostgreSQL on [Neon](https://neon.tech) | An analysis cache and a per-client counter, reached only from the server. Neon's serverless driver talks over HTTP, which suits a Vercel function that lives for one request — a connection pool there opens a connection per invocation |
 | Threat intelligence | [VirusTotal API v3](https://www.virustotal.com) | Free tier, called from the server so the key never ships to a browser |
 | Package manager | [pnpm](https://pnpm.io) | |
@@ -257,7 +264,7 @@ curl https://shield-link.vercel.app/api/health
     "error": null
   },
   "virustotal": { "clave": true },
-  "node": "v24.20.0",
+  "node": "v24.21.0",
   "cacheActivo": true
 }
 ```

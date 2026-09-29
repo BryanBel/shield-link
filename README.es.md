@@ -9,6 +9,9 @@ abrirlo.
 
 https://github.com/user-attachments/assets/c69e69d0-49f2-4a90-b3ca-5bca7775d738
 
+*22 segundos hechos con un informe real de `aka.ms/wsl`: el enlace se parte en su dominio, su certificado y su
+destino, y cada hallazgo vuelve al veredicto.*
+
 Proyecto de ciberseguridad para Ingeniería en Informática, Universidad Alejandro de
 Humboldt.
 
@@ -79,6 +82,8 @@ solo lo que se puede comprobar:
   ejemplo, es predictivo: señala dominios con patrones que podrían usarse en ataques antes de
   que ocurra alguno. Una detección suya, sola, se reporta como una predicción, no como un
   ataque detectado.
+
+![El informe de google.com: seguro, certeza media, con las dos detecciones explicadas como un falso positivo casi seguro](docs/informe.webp)
 
 ### Qué tan seguro está
 
@@ -169,6 +174,8 @@ del primer pintado, así que la página nunca parpadea con el diseño por defect
 tiene además un modo claro, pero eso —y alguna otra cosa— queda para que lo descubran los
 curiosos.
 
+![La pantalla de inicio en cada uno de los seis estilos](docs/estilos.webp)
+
 Cada estilo es un conjunto de valores para las mismas variables, definidas en
 [`src/styles/estilos/_contrato.css`](src/styles/estilos/_contrato.css); los componentes solo
 leen esas variables. Agregar un estilo es un archivo CSS en esa carpeta y una línea en
@@ -185,7 +192,7 @@ menos movimiento no ve destellos, cursores que parpadean ni grillas que se mueve
 
 | Capa | Elección | Por qué |
 | ---- | -------- | ------- |
-| Framework | [Astro](https://astro.build) 7, SSR en [Vercel](https://vercel.com) | La página se genera de antemano y un endpoint hace el trabajo; el navegador recibe un solo script de 21 KB para el informe y los estilos |
+| Framework | [Astro](https://astro.build) 7, SSR en [Vercel](https://vercel.com) | La página se genera de antemano y un endpoint hace el trabajo; el navegador recibe un solo script de 22 KB para el informe y los estilos |
 | Base de datos | PostgreSQL en [Neon](https://neon.tech) | Una caché de análisis y un contador por cliente, accesibles solo desde el servidor. El driver serverless de Neon habla por HTTP, lo que encaja con una función de Vercel que vive una sola petición — un pool ahí abre una conexión por invocación |
 | Inteligencia de amenazas | [VirusTotal API v3](https://www.virustotal.com) | Plan gratuito, llamado desde el servidor para que la clave nunca llegue al navegador |
 | Gestor de paquetes | [pnpm](https://pnpm.io) | |
@@ -266,7 +273,7 @@ curl https://shield-link.vercel.app/api/health
     "error": null
   },
   "virustotal": { "clave": true },
-  "node": "v24.20.0",
+  "node": "v24.21.0",
   "cacheActivo": true
 }
 ```
