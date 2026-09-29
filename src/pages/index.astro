@@ -3,16 +3,6 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Shield Link - Análisis de Seguridad">
-    <!-- Se mueve por la pantalla: temas.js lo posiciona y lo cambia de lugar tras cada estilo. -->
-    <button id="btnDado" class="dado" type="button" aria-label="Cambiar a un diseño al azar" title="Diseño al azar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
-            <circle cx="8" cy="8" r="1.2" fill="currentColor"></circle><circle cx="16" cy="8" r="1.2" fill="currentColor"></circle>
-            <circle cx="12" cy="12" r="1.2" fill="currentColor"></circle>
-            <circle cx="8" cy="16" r="1.2" fill="currentColor"></circle><circle cx="16" cy="16" r="1.2" fill="currentColor"></circle>
-        </svg>
-    </button>
-
     <main>
         <h1><span class="logo" aria-hidden="true">🛡️</span> <span class="marca">Shield Link</span></h1>
         <p class="lema">Análisis instantáneo de enlaces sospechosos</p>
@@ -24,6 +14,20 @@ import Layout from '../layouts/Layout.astro';
 
         <div id="result" class="hidden" tabindex="-1" aria-live="polite"></div>
     </main>
+
+    <!--
+        En pantallas anchas flota: temas.js lo posiciona y lo cambia de lugar tras cada estilo.
+        En el teléfono se queda quieto, centrado bajo la tarjeta, con la pista debajo.
+        Tras el easter egg, la barra de estilos ocupa su lugar.
+    -->
+    <button id="btnDado" class="dado" type="button" aria-label="Cambiar a un diseño al azar" title="Diseño al azar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+            <circle cx="8" cy="8" r="1.2" fill="currentColor"></circle><circle cx="16" cy="8" r="1.2" fill="currentColor"></circle>
+            <circle cx="12" cy="12" r="1.2" fill="currentColor"></circle>
+            <circle cx="8" cy="16" r="1.2" fill="currentColor"></circle><circle cx="16" cy="16" r="1.2" fill="currentColor"></circle>
+        </svg>
+    </button>
 
     <small class="pista" aria-hidden="true"></small>
 </Layout>
@@ -55,6 +59,8 @@ import Layout from '../layouts/Layout.astro';
         const url = input.value.trim();
         if (!url) return;
 
+        // Closes the phone keyboard, which would otherwise leave the page scrolled halfway.
+        input.blur();
         inputContainer.classList.add('hidden');
         resultDiv.replaceChildren(...cargando());
         resultDiv.classList.remove('hidden');
@@ -66,7 +72,9 @@ import Layout from '../layouts/Layout.astro';
         const urlAbrir = normalizarEntrada(url).url?.href ?? null;
         resultDiv.replaceChildren(res.error ? renderAviso(res) : renderInforme(res, { urlAbrir }));
         main.classList.toggle('con-resultado', !res.error);
-        resultDiv.focus();
+        // The whole card from its top, verdict included, instead of wherever focus lands.
+        resultDiv.focus({ preventScroll: true });
+        scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 
         document.getElementById('resetBtn')?.addEventListener('click', () => {
             main.classList.remove('con-resultado');

@@ -8,11 +8,13 @@ import { ESTILOS } from '../styles/estilos/registro.js';
  * this module handles everything after:
  *
  * - The dice. Pressing it grows the next style out of the button in a circle, then the
- *   button hops to a random free spot on the screen.
+ *   button hops to a random free spot on the screen. On a phone it stays put, centred under
+ *   the card (base.css): there is no free room beside the card to hop to.
  * - The easter egg. The Konami code (↑↑↓↓←→←→BA), or seven taps on the shield on a phone,
- *   opens a chest in the middle of the screen. The prize: a style bar at the top — current
- *   style, the full list, and light mode, which does not exist until then. The prize lasts
- *   for the visit: after a reload the page is dark again and the bar needs the code.
+ *   opens a chest in the middle of the screen. The prize: a style bar that takes the dice's
+ *   place, bottom centre — current style, the full list, and light mode, which does not
+ *   exist until then. The prize lasts for the visit: after a reload the page is dark again,
+ *   the dice is back and the bar needs the code.
  *
  * Only the chosen style is remembered. localStorage can be unavailable (private windows,
  * blocked storage); every access is guarded, so the page still works and simply forgets.
@@ -97,17 +99,17 @@ const solapa = (a, b, holgura) =>
   a.x < b.right + holgura && a.x + a.lado > b.left - holgura && a.y < b.bottom + holgura && a.y + a.lado > b.top - holgura;
 
 /**
- * A random spot that covers neither the card nor the style bar, and lands far enough from
- * the previous one that the hop is obvious. No grid: every hop is a fresh throw. If only
- * near spots are free, the first free one wins. If the card leaves no room at all — a long
- * report on a phone — the dice goes to a corner, where a floating button is expected,
- * rather than anywhere on top of the text.
+ * A random spot that does not cover the card and lands far enough from the previous one
+ * that the hop is obvious. No grid: every hop is a fresh throw. If only near spots are
+ * free, the first free one wins. If the card leaves no room at all — a long report in a
+ * narrow window — the dice goes to a corner, where a floating button is expected, rather
+ * than anywhere on top of the text.
  */
 function lugarAlAzar(dado) {
   const lado = dado.offsetWidth || 52;
   const ancho = innerWidth - lado - 2 * MARGEN;
   const alto = innerHeight - lado - 2 * MARGEN;
-  const obstaculos = [document.querySelector('main'), barra].filter(Boolean).map((e) => e.getBoundingClientRect());
+  const obstaculos = [document.querySelector('main')].filter(Boolean).map((e) => e.getBoundingClientRect());
   const anterior = posicionDado ? { x: MARGEN + posicionDado.fx * ancho, y: MARGEN + posicionDado.fy * alto } : null;
   const distanciaMinima = Math.min(innerWidth, innerHeight) * 0.35;
 
@@ -186,7 +188,7 @@ function crearBarra() {
   const flecha = document.createElement('span');
   flecha.className = 'barra-flecha';
   flecha.setAttribute('aria-hidden', 'true');
-  flecha.textContent = '▾';
+  flecha.textContent = '▴'; // the list opens upwards
   boton.append(etiqueta, actual, flecha);
 
   const panel = document.createElement('div');
@@ -252,7 +254,11 @@ function crearBarra() {
     }
   });
 
-  document.body.append(contenedor);
+  // Where the dice was, so on a phone it sits in the same spot under the card.
+  const dado = document.getElementById('btnDado');
+  if (dado) dado.after(contenedor);
+  else document.body.append(contenedor);
+  document.body.classList.add('con-barra');
   return contenedor;
 }
 
@@ -270,6 +276,8 @@ function mostrarBarra({ entrando = false } = {}) {
     barra.classList.remove('entrando');
     void barra.offsetWidth; // restart the entrance animation
     barra.classList.add('entrando');
+    // On a phone it sits at the end of the page, maybe below a long report.
+    barra.scrollIntoView({ block: 'nearest', behavior: menosMovimiento() ? 'auto' : 'smooth' });
   }
 }
 

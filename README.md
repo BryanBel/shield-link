@@ -157,7 +157,8 @@ are never counted.
 
 The page comes in six styles — Classic, Y2K, Cyberpunk, Clay, Vaporwave and Vista Aero. The round dice
 button switches to a random one: the new style grows out of the button in a circle, and
-the dice hops to a free spot somewhere else on the screen. The chosen style is remembered
+the dice hops to a free spot somewhere else on the screen (on a phone it stays centred under
+the card, where there is room for it). The chosen style is remembered
 and applied before the first paint, so the page never flashes the default look. Every
 style also has a light mode, but that — and a few other things — are for the curious to
 find.

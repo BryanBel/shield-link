@@ -13,7 +13,12 @@ html {
 }
 body {
   margin: 0;
+  /* dvh: on a phone, 100vh is the height with the address bar hidden, a little more than is visible. */
   min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  /* Room for the style bar, which floats at the bottom once unlocked. */
+  padding-bottom: var(--alto-barra, 0px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -374,17 +379,25 @@ svg[hidden] { display: none; }
 
 /* ---------- Diseño: la barra de estilos (el premio) ---------- */
 
+/*
+ * Takes the dice's place once the easter egg is found: bottom centre, with the list opening
+ * upwards. The clues have done their job by then, so they go too.
+ */
+body.con-barra { --alto-barra: 3.25rem; }
+.con-barra .dado,
+.con-barra .pista { display: none; }
+
 .barra-estilos {
   position: fixed;
-  top: 0.75rem;
+  bottom: 0.75rem;
   left: 50%;
   z-index: 70;
-  transform: translateX(-50%);
+  translate: -50% 0;
 }
 .barra-estilos.entrando { animation: barra-entrar 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
 @keyframes barra-entrar {
-  from { transform: translate(-50%, -160%); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
+  from { transform: translateY(160%); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 .barra-boton {
   width: auto;
@@ -406,10 +419,12 @@ svg[hidden] { display: none; }
 
 .panel-estilos {
   position: absolute;
-  top: calc(100% + 0.5rem);
+  bottom: calc(100% + 0.5rem);
   left: 50%;
   transform: translateX(-50%);
   width: min(320px, 90vw);
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
   box-sizing: border-box;
   padding: 0.75rem;
   background: var(--superficie);
@@ -548,7 +563,7 @@ dialog.cofre::backdrop { background: #0b0617; }
 @media (min-width: 960px) and (min-height: 560px) {
   main.con-resultado {
     max-width: 1120px;
-    height: calc(100dvh - 3rem);
+    height: calc(100dvh - 3rem - var(--alto-barra, 0px));
     margin: 1.5rem 0;
     padding: 1.25rem 1.5rem;
     display: flex;
@@ -577,4 +592,21 @@ dialog.cofre::backdrop { background: #0b0617; }
     border-left: 1px solid var(--borde);
   }
   .con-resultado .informe-motivo { margin: 0.75rem 0; }
+}
+
+/*
+ * Teléfonos: una columna que no se mueve mientras la tarjeta quepa. La tarjeta se centra en
+ * el alto que sobra y debajo quedan, quietos y centrados, el dado (o la barra, tras el easter
+ * egg) y la pista: a los lados no hay espacio libre al que el dado pueda saltar.
+ */
+@media (max-width: 720px) {
+  body {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0 1.25rem;
+  }
+  main { margin: auto 0; padding: 1.5rem 1.25rem; }
+  .dado,
+  .barra-estilos { position: relative; inset: auto; translate: none; flex: none; }
+  .pista { position: relative; inset: auto; transform: none; opacity: 0.6; }
 }

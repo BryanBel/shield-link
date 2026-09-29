@@ -163,7 +163,8 @@ nuevos tienen un límite por cliente: 4 por minuto y 50 por día. Pasado el lím
 
 La página viene en seis estilos: Clásico, Y2K, Cyberpunk, Clay, Vaporwave y Vista Aero. El dado redondo
 cambia a uno al azar: el estilo nuevo se expande en círculo desde el botón, y el dado salta a
-un lugar libre en otra parte de la pantalla. El estilo elegido se recuerda y se aplica antes
+un lugar libre en otra parte de la pantalla (en el teléfono se queda centrado bajo la tarjeta,
+donde hay espacio para él). El estilo elegido se recuerda y se aplica antes
 del primer pintado, así que la página nunca parpadea con el diseño por defecto. Cada estilo
 tiene además un modo claro, pero eso —y alguna otra cosa— queda para que lo descubran los
 curiosos.

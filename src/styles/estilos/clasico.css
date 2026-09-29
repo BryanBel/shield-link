@@ -69,3 +69,6 @@
   --sombra-control: none;
   --brillo-titulo: none;
 }
+
+/* Pista del menú secreto: la primera, que manda a tirar el dado. */
+[data-estilo="clasico"] .pista::after { content: '🎲 cada diseño guarda una pieza'; }
