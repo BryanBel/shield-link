@@ -7,7 +7,7 @@ abrirlo.
 
 **En vivo en [shield-link.vercel.app](https://shield-link.vercel.app)**
 
-https://github.com/user-attachments/assets/c69e69d0-49f2-4a90-b3ca-5bca7775d738
+https://github.com/user-attachments/assets/d51cb654-d580-4068-9a76-d4556720805b
 
 *22 segundos hechos con un informe real de `aka.ms/wsl`: el enlace se parte en su dominio, su certificado y su
 destino, y cada hallazgo vuelve al veredicto.*
