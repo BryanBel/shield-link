@@ -9,8 +9,8 @@ abrirlo.
 
 https://github.com/user-attachments/assets/75a1b143-63ca-4819-af09-97137775a961
 
-*22 segundos hechos con un informe real de `aka.ms/wsl`: el enlace se parte en su dominio, su certificado y su
-destino, y cada hallazgo vuelve al veredicto.*
+*28 segundos hechos con un informe real de `aka.ms/wsl`: el enlace se parte en su dominio, su certificado y su
+destino, cada hallazgo vuelve al veredicto, y al final el nombre recorre los seis diseños.*
 
 Proyecto de ciberseguridad para Ingeniería en Informática, Universidad Alejandro de
 Humboldt.

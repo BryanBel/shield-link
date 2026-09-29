@@ -8,8 +8,8 @@ A URL safety scanner. Paste a link, get a verdict before you click it.
 
 https://github.com/user-attachments/assets/75a1b143-63ca-4819-af09-97137775a961
 
-*22 seconds, built from a real report for `aka.ms/wsl`: the link breaks into its domain, certificate and
-destination, and each finding folds back into the verdict.*
+*28 seconds, built from a real report for `aka.ms/wsl`: the link breaks into its domain, certificate and
+destination, each finding folds back into the verdict, and the name ends up running through all six designs.*
 
 Built as a cybersecurity project for the Computer Engineering programme at Universidad
 Alejandro de Humboldt.
