@@ -1,0 +1,105 @@
+/*
+ * Vaporwave — atardecer rosa y cian, grilla de horizonte en perspectiva, nostalgia de los
+ * 80 y 90, letras espaciadas y sombras duras desplazadas. Títulos en VT323; el texto en
+ * Space Grotesk.
+ */
+@import '@fontsource/vt323/latin-400.css';
+@import '@fontsource/space-grotesk/latin-400.css';
+@import '@fontsource/space-grotesk/latin-700.css';
+
+[data-estilo="vaporwave"][data-modo="oscuro"] {
+  --fondo: #1a0b2e;
+  --fondo-decoracion: linear-gradient(180deg, #2b0f4c 0%, #5b1e6b 35%, #c2407a 55%, #1a0b2e 56%);
+  --superficie: #241040;
+  --superficie-decoracion: linear-gradient(180deg, rgba(255, 113, 206, 0.08), transparent 35%);
+  --superficie-2: #2d1452;
+  --borde: #7c3fbf;
+  --texto: #fff0fb;
+  --texto-suave: #fbcfe8;
+  --texto-tenue: #d8b4fe;
+  --acento: #ff71ce;
+  --acento-texto: #1a0b2e;
+  --boton-fondo: linear-gradient(90deg, #ff71ce, #b967ff);
+  --enlace: #01cdfe;
+  --seguro: #05ffa1;
+  --precaucion: #fffb96;
+  --peligro: #ff7a95;
+  --neutro: #c4b5fd;
+  --icono-texto: #1a0b2e;
+  --seguro-fondo: rgba(5, 255, 161, 0.06);
+  --precaucion-fondo: rgba(255, 251, 150, 0.06);
+  --peligro-fondo: rgba(255, 122, 149, 0.07);
+  --fuente-titulo: 'VT323', ui-monospace, monospace;
+  --fuente-texto: 'Space Grotesk', system-ui, sans-serif;
+  --titulo-peso: 400;
+  --titulo-espaciado: 0.18em;
+  --titulo-mayusculas: uppercase;
+  --radio: 6px;
+  --radio-control: 4px;
+  --grosor-borde: 2px;
+  --sombra-tarjeta: 8px 8px 0 #01cdfe, 16px 16px 0 rgba(255, 113, 206, 0.45);
+  --sombra-control: 4px 4px 0 #01cdfe;
+  --brillo-titulo: 3px 3px 0 #ff71ce, 6px 6px 0 #01cdfe;
+}
+
+[data-estilo="vaporwave"][data-modo="claro"] {
+  --fondo: #fff1fa;
+  --fondo-decoracion: linear-gradient(180deg, #ffd6ef 0%, #e9d5ff 45%, #cffafe 100%);
+  --superficie: #ffffff;
+  --superficie-decoracion: none;
+  --superficie-2: #fdf2ff;
+  --borde: #e9a8f5;
+  --texto: #3b0764;
+  --texto-suave: #581c87;
+  --texto-tenue: #6b21a8;
+  --acento: #a21caf;
+  --acento-texto: #ffffff;
+  --boton-fondo: linear-gradient(90deg, #db2777, #9333ea);
+  --enlace: #0369a1;
+  --seguro: #047857;
+  --precaucion: #92400e;
+  --peligro: #be123c;
+  --neutro: #6b21a8;
+  --icono-texto: #ffffff;
+  --seguro-fondo: rgba(4, 120, 87, 0.05);
+  --precaucion-fondo: rgba(146, 64, 14, 0.05);
+  --peligro-fondo: rgba(190, 18, 60, 0.05);
+  --fuente-titulo: 'VT323', ui-monospace, monospace;
+  --fuente-texto: 'Space Grotesk', system-ui, sans-serif;
+  --titulo-peso: 400;
+  --titulo-espaciado: 0.18em;
+  --titulo-mayusculas: uppercase;
+  --radio: 6px;
+  --radio-control: 4px;
+  --grosor-borde: 2px;
+  --sombra-tarjeta: 8px 8px 0 #67e8f9, 16px 16px 0 rgba(244, 114, 182, 0.35);
+  --sombra-control: 4px 4px 0 #67e8f9;
+  --brillo-titulo: 2px 2px 0 #f9a8d4, 4px 4px 0 #67e8f9;
+}
+
+/* VT323 es una fuente de pantalla chica: necesita más tamaño para leerse igual. */
+[data-estilo="vaporwave"] main > h1 { font-size: 2.8rem; }
+[data-estilo="vaporwave"] .informe-cabecera h2 { font-size: 1.9rem; }
+
+/* La grilla del horizonte, en perspectiva, en la mitad baja de la pantalla. */
+[data-estilo="vaporwave"] body::before {
+  content: '';
+  position: fixed;
+  left: -50%;
+  right: -50%;
+  bottom: 0;
+  height: 45vh;
+  pointer-events: none;
+  z-index: 0;
+  background-image: linear-gradient(rgba(1, 205, 254, 0.45) 2px, transparent 2px), linear-gradient(90deg, rgba(255, 113, 206, 0.45) 2px, transparent 2px);
+  background-size: 60px 40px;
+  transform: perspective(300px) rotateX(60deg);
+  transform-origin: bottom;
+  animation: vapor-grilla 6s linear infinite;
+}
+[data-estilo="vaporwave"][data-modo="claro"] body::before { opacity: 0.55; }
+@keyframes vapor-grilla { to { background-position: 0 40px; } }
+[data-estilo="vaporwave"] main { position: relative; z-index: 1; }
+
+/* Pista del menú secreto: el final del código. */
+[data-estilo="vaporwave"] .pista::after { content: 'Ｂ Ａ'; letter-spacing: 0.4em; }

@@ -3,9 +3,35 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Shield Link - Análisis de Seguridad">
+    <div class="controles">
+        <button id="btnMenu" class="control" type="button" aria-label="Elegir diseño" title="Elegir diseño" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="13.5" cy="6.5" r="1.5"></circle><circle cx="17.5" cy="10.5" r="1.5"></circle><circle cx="8.5" cy="7.5" r="1.5"></circle><circle cx="6.5" cy="12.5" r="1.5"></circle>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16c3.1 0 5.6-2.5 5.6-5.6C21.6 6.1 17.3 2 12 2z"></path>
+            </svg>
+        </button>
+        <button id="btnDiseno" class="control" type="button" aria-label="Cambiar a un diseño al azar" title="Diseño al azar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+                <circle cx="8" cy="8" r="1.2" fill="currentColor"></circle><circle cx="16" cy="8" r="1.2" fill="currentColor"></circle>
+                <circle cx="12" cy="12" r="1.2" fill="currentColor"></circle>
+                <circle cx="8" cy="16" r="1.2" fill="currentColor"></circle><circle cx="16" cy="16" r="1.2" fill="currentColor"></circle>
+            </svg>
+        </button>
+        <button id="btnModo" class="control" type="button" aria-label="Cambiar modo claro u oscuro" title="Claro u oscuro">
+            <svg id="iconoSol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+            </svg>
+            <svg id="iconoLuna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+            </svg>
+        </button>
+    </div>
+
     <main>
-        <h1>🛡️ Shield Link</h1>
-        <p>Análisis instantáneo de enlaces sospechosos</p>
+        <h1><span class="logo" aria-hidden="true">🛡️</span> <span class="marca">Shield Link</span></h1>
+        <p class="lema">Análisis instantáneo de enlaces sospechosos</p>
 
         <div id="inputContainer" class="scanner-card">
             <input type="text" id="linkInput" placeholder="ejemplo-sospechoso.com o https://…" aria-label="Enlace a analizar" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" />
@@ -14,12 +40,17 @@ import Layout from '../layouts/Layout.astro';
 
         <div id="result" class="hidden" tabindex="-1" aria-live="polite"></div>
     </main>
+
+    <small class="pista" aria-hidden="true"></small>
 </Layout>
 
 <script>
     import { analizarSeguridad } from '../utils/scanner.js';
     import { normalizarEntrada } from '../utils/normalizarEntrada.js';
     import { renderAviso, renderInforme } from '../utils/renderInforme.js';
+    import { iniciarTemas } from '../utils/temas.js';
+
+    iniciarTemas();
 
     const main = document.querySelector('main') as HTMLElement;
     const btn = document.getElementById('scanBtn');
@@ -70,274 +101,3 @@ import Layout from '../layouts/Layout.astro';
         if (evento.key === 'Enter') escanear();
     });
 </script>
-
-<style is:global>
-    .hidden { display: none; }
-    #result:focus { outline: none; }
-
-    .loader {
-        border: 4px solid #334155;
-        border-top: 4px solid #3b82f6;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin: 1rem auto;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .cargando-texto { color: #93c5fd; }
-
-    .informe {
-        text-align: left;
-        border: 2px solid var(--borde-nivel, #334155);
-        background: var(--fondo-nivel, transparent);
-        border-radius: 12px;
-        padding: 1.25rem;
-    }
-    .informe-seguro { --borde-nivel: #2ecc71; --fondo-nivel: rgba(46, 204, 113, 0.08); }
-    .informe-precaucion { --borde-nivel: #f39c12; --fondo-nivel: rgba(243, 156, 18, 0.08); }
-    .informe-peligroso { --borde-nivel: #ff4d4d; --fondo-nivel: rgba(255, 77, 77, 0.08); }
-    .informe-aviso { --borde-nivel: #f39c12; --fondo-nivel: rgba(243, 156, 18, 0.08); text-align: center; }
-
-    .informe-cabecera { display: flex; align-items: center; gap: 0.75rem; }
-    .informe-aviso .informe-cabecera { justify-content: center; }
-    .informe-icono { font-size: 2.25rem; line-height: 1; }
-    .informe-cabecera h2 { margin: 0; font-size: 1.35rem; }
-    .certeza {
-        display: inline-block;
-        margin-top: 0.25rem;
-        padding: 0.1rem 0.55rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        border: 1px solid currentColor;
-    }
-    .certeza-alta { color: #2ecc71; }
-    .certeza-media { color: #f39c12; }
-    .certeza-baja { color: #94a3b8; }
-    .informe-enlace {
-        margin: 0.9rem 0 0;
-        padding: 0.5rem 0.75rem;
-        border-radius: 8px;
-        background: rgba(15, 23, 42, 0.6);
-        display: grid;
-        gap: 0.1rem;
-        overflow-wrap: anywhere;
-    }
-    .informe-enlace strong { font-size: 1.05rem; }
-    .informe-enlace span { font-size: 0.8rem; color: #94a3b8; }
-    .acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
-    .acciones .secondary-btn { margin: 0; }
-    .boton-abrir {
-        width: auto;
-        padding: 10px 18px;
-        border-radius: 6px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        border: 2px solid transparent;
-        cursor: pointer;
-    }
-    .boton-seguro { background: #16a34a; color: white; }
-    .boton-seguro:hover { background: #15803d; }
-    .boton-precaucion { background: #d97706; color: white; }
-    .boton-precaucion:hover { background: #b45309; }
-    /* Dangerous: deliberately the least inviting button on the card. */
-    .boton-peligroso { background: transparent; color: #fca5a5; border-color: #7f1d1d; }
-    .boton-peligroso:hover { background: rgba(127, 29, 29, 0.35); }
-    .boton-abrir:disabled { opacity: 0.45; cursor: not-allowed; }
-
-    .dialogo {
-        max-width: min(440px, calc(100vw - 2rem));
-        border: 1px solid #334155;
-        border-top: 4px solid var(--borde-nivel, #334155);
-        border-radius: 12px;
-        background: #1e293b;
-        color: #f8fafc;
-        padding: 1.25rem 1.4rem;
-        text-align: left;
-    }
-    .dialogo::backdrop { background: rgba(2, 6, 23, 0.7); }
-    .dialogo-seguro { --borde-nivel: #2ecc71; }
-    .dialogo-precaucion { --borde-nivel: #f39c12; }
-    .dialogo-peligroso { --borde-nivel: #ff4d4d; }
-    .dialogo h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
-    .dialogo p { margin: 0.5rem 0; font-size: 0.9rem; line-height: 1.45; color: #cbd5e1; }
-    .dialogo-url { font-size: 0.8rem !important; color: #94a3b8 !important; overflow-wrap: anywhere; }
-    .dialogo-casilla { display: flex; gap: 0.5rem; align-items: center; margin: 0.9rem 0 0; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
-    .dialogo-casilla input { width: auto; margin: 0; }
-    .dialogo-acciones { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.1rem; }
-    .dialogo-acciones .secondary-btn { margin: 0; }
-
-    .sitio { margin: 1.25rem 0; }
-    .sitio h3,
-    .detecciones h3,
-    .hallazgos h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 0 0 0.5rem; }
-    .sitio-comprobacion { margin-top: 0.35rem; }
-    .sitio-comprobacion > summary { cursor: pointer; font-size: 0.8rem; color: #93c5fd; margin-left: 2.1rem; }
-    .sitio-dice { margin: 0 0 0.6rem; font-size: 0.9rem; line-height: 1.45; font-style: italic; color: #e2e8f0; }
-    .sitio-fuente { font-style: normal; color: #94a3b8; }
-    .sitio-conclusion { margin: 0; display: flex; gap: 0.6rem; align-items: flex-start; font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
-    .sitio-coherente .senal-icono { background: #2ecc71; }
-    .sitio-dudoso .senal-icono { background: #f39c12; }
-    .sitio-no-cuadra .senal-icono { background: #ff4d4d; }
-    .sitio-sin-datos .senal-icono { background: #94a3b8; }
-    .sitio-puntos { margin: 0.4rem 0 0 2.1rem; padding: 0; list-style: none; display: grid; gap: 0.25rem; }
-    .sitio-puntos li { font-size: 0.85rem; color: #cbd5e1; line-height: 1.4; }
-    .sitio-puntos li::before { margin-right: 0.35rem; font-weight: 700; }
-    .punto-bien::before { content: '✓'; color: #2ecc71; }
-    .punto-alerta::before { content: '!'; color: #f39c12; }
-    .punto-peligro::before { content: '✕'; color: #ff4d4d; }
-    .punto-info::before { content: '·'; color: #94a3b8; }
-    .sitio-categorias { margin: 0.5rem 0 0 2.1rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }
-    .etiqueta {
-        font-size: 0.72rem;
-        padding: 0.1rem 0.5rem;
-        border-radius: 999px;
-        background: rgba(148, 163, 184, 0.15);
-        color: #cbd5e1;
-    }
-    .informe-motivo { margin: 1rem 0; line-height: 1.5; }
-
-    .ficha {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-        gap: 0.5rem;
-        margin: 0;
-    }
-    .ficha-dato {
-        margin: 0;
-        padding: 0.55rem 0.7rem;
-        border-radius: 8px;
-        background: rgba(15, 23, 42, 0.6);
-        border-left: 3px solid var(--color-dato, #475569);
-    }
-    .ficha-dato dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
-    .ficha-dato dd { margin: 0.15rem 0 0; font-weight: 600; font-size: 0.95rem; overflow-wrap: anywhere; }
-    .ficha-bien { --color-dato: #2ecc71; }
-    .ficha-alerta { --color-dato: #f39c12; }
-    .ficha-peligro { --color-dato: #ff4d4d; }
-
-    .detecciones {
-        margin: 0 0 1.25rem;
-        padding: 0.8rem 0.9rem;
-        border-radius: 8px;
-        background: rgba(15, 23, 42, 0.6);
-        border-left: 3px solid var(--color-deteccion, #94a3b8);
-    }
-    .detecciones-falso-positivo { --color-deteccion: #2ecc71; }
-    .detecciones-prediccion,
-    .detecciones-minoritaria,
-    .detecciones-plataforma { --color-deteccion: #f39c12; }
-    .detecciones-amenaza { --color-deteccion: #ff4d4d; }
-    .detecciones h3 { color: #e2e8f0; text-transform: none; letter-spacing: 0; font-size: 0.95rem; }
-    .detecciones p { margin: 0; font-size: 0.87rem; line-height: 1.5; color: #cbd5e1; }
-    .detecciones-motores { margin: 0.6rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.2rem; font-size: 0.8rem; color: #94a3b8; }
-    .detecciones-motores strong { color: #e2e8f0; }
-
-    .hallazgos { margin-bottom: 1.25rem; }
-    .hallazgos > .senales { margin-bottom: 0.5rem; }
-    .senales-plegadas { margin-top: 0.4rem; }
-    .senales-plegadas > summary {
-        cursor: pointer;
-        list-style: none;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-    .senales-plegadas > summary::-webkit-details-marker { display: none; }
-    .senales-plegadas > summary::after { content: '▸'; color: #94a3b8; }
-    .senales-plegadas[open] > summary::after { content: '▾'; }
-    .senales-plegadas > .senales { margin: 0.5rem 0 0 0.25rem; }
-    .senales-plegadas.senal-bien > summary .senal-icono { background: #2ecc71; }
-    .senales-plegadas.senal-info > summary .senal-icono { background: #94a3b8; }
-    .senales { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
-    .senal { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.6rem; align-items: start; }
-    .senal strong { display: block; font-size: 0.95rem; }
-    .senal p { margin: 0.15rem 0 0; font-size: 0.85rem; color: #cbd5e1; line-height: 1.45; }
-    .senal-icono {
-        width: 1.5rem;
-        height: 1.5rem;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #0f172a;
-    }
-    .senal-peligro .senal-icono { background: #ff4d4d; }
-    .senal-alerta .senal-icono { background: #f39c12; }
-    .senal-bien .senal-icono { background: #2ecc71; }
-    .senal-info .senal-icono { background: #94a3b8; }
-
-    .informe-tecnico { border: 1px solid #334155; border-radius: 8px; }
-    .enlace-externo { color: #93c5fd; font-size: 0.85rem; font-weight: 600; justify-self: start; }
-    .informe-tecnico > summary { cursor: pointer; font-weight: 600; padding: 0.6rem 0.8rem; }
-    .tecnico-cuerpo { padding: 0 0.8rem 0.8rem; display: grid; gap: 1rem; }
-    .tecnico-bloque h4 { margin: 0 0 0.4rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #93c5fd; }
-    .tecnico-bloque dl {
-        margin: 0;
-        display: grid;
-        grid-template-columns: minmax(7rem, 35%) 1fr;
-        gap: 0.3rem 0.75rem;
-    }
-    .tecnico-bloque dt { font-size: 0.8rem; color: #94a3b8; }
-    .tecnico-bloque dd { margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
-    .tecnico-bloque ul { margin: 0; padding-left: 1.1rem; }
-
-    .informe-nota { font-size: 0.8rem; color: #94a3b8; margin: 1rem 0 0; }
-
-    .secondary-btn {
-        margin-top: 1.25rem;
-        background: #334155;
-        color: white;
-        border: none;
-        cursor: pointer;
-        font-size: 0.9rem;
-        width: auto;
-        padding: 10px 20px;
-        border-radius: 6px;
-    }
-    .informe-extra { margin-top: 1.25rem; }
-
-    /*
-     * Wide screens: the whole report fits the window. The header shrinks to one line, the
-     * card splits into two columns, and anything that grows — the folded signals, the
-     * technical detail — scrolls inside its own column instead of pushing the page down.
-     * Phones keep the single column; there is no height to fit it into.
-     */
-    @media (min-width: 960px) and (min-height: 560px) {
-        main.con-resultado {
-            max-width: 1120px;
-            height: calc(100dvh - 3rem);
-            margin: 1.5rem 0;
-            padding: 1.25rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-        }
-        main.con-resultado > h1 { font-size: 1.5rem; margin: 0; }
-        main.con-resultado > p { margin: 0.25rem 0 1rem; font-size: 0.85rem; color: #94a3b8; }
-        main.con-resultado #result:not(.hidden) { flex: 1; min-height: 0; display: flex; }
-
-        .con-resultado .informe {
-            flex: 1;
-            min-height: 0;
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-            gap: 1.5rem;
-        }
-        .con-resultado .informe-principal,
-        .con-resultado .informe-extra {
-            min-height: 0;
-            overflow-y: auto;
-            overscroll-behavior: contain;
-        }
-        .con-resultado .informe-extra {
-            margin-top: 0;
-            padding-left: 1.5rem;
-            border-left: 1px solid #334155;
-        }
-        .con-resultado .informe-motivo { margin: 0.75rem 0; }
-    }
-</style>

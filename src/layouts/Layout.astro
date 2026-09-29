@@ -1,72 +1,37 @@
 ---
+import { ESTILO_INICIAL } from '../styles/estilos/registro.js';
+
+// Order matters: the contract's defaults, then every style (any .css dropped into
+// src/styles/estilos/ is picked up here, no import to add), then the components.
+import '../styles/estilos/_contrato.css';
+import.meta.glob(['../styles/estilos/*.css', '!../styles/estilos/_contrato.css'], { eager: true });
+import '../styles/base.css';
+
 const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-estilo={ESTILO_INICIAL} data-modo="oscuro">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="description" content="Shield Link - Detector de Phishing" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<title>{title}</title>
+		<!--
+			Applies the saved style and mode before the first paint, so the page never flashes
+			the default look. Kept tiny, inline and static on purpose: astro.config.mjs hashes
+			this exact text into the Content-Security-Policy, and utils/temas.js validates the
+			style against the registry once the page loads.
+		-->
+		<script is:inline>(function () {
+	var raiz = document.documentElement, estilo = null, modo = null;
+	try { estilo = localStorage.getItem('shieldlink:estilo'); modo = localStorage.getItem('shieldlink:modo'); } catch (e) {}
+	if (estilo && /^[a-z0-9-]+$/.test(estilo)) raiz.dataset.estilo = estilo;
+	raiz.dataset.modo = modo === 'claro' || modo === 'oscuro' ? modo : (matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro');
+})();</script>
 	</head>
 	<body>
 		<slot />
 	</body>
 </html>
-
-<style is:global>
-	:root {
-		--accent: #3b82f6;
-		--bg: #0f172a;
-		--text: #f8fafc;
-	}
-	html {
-		font-family: system-ui, sans-serif;
-		background: var(--bg);
-		color: var(--text);
-	}
-	body {
-		margin: 0;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 100vh;
-	}
-	main {
-		max-width: 640px;
-		width: 90%;
-		box-sizing: border-box;
-		margin: 2rem 0;
-		text-align: center;
-		padding: 2rem;
-		background: #1e293b;
-		border-radius: 16px;
-		box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-	}
-	input {
-		width: 100%;
-		padding: 12px;
-		border-radius: 8px;
-		border: 1px solid #334155;
-		background: #0f172a;
-		color: white;
-		margin-bottom: 1rem;
-		box-sizing: border-box;
-	}
-	button {
-		width: 100%;
-		padding: 12px;
-		background: var(--accent);
-		color: white;
-		border: none;
-		border-radius: 8px;
-		font-weight: bold;
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-	button:hover {
-		background: #2563eb;
-	}
-</style>

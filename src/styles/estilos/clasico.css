@@ -1,0 +1,71 @@
+/* Clásico — el diseño original: pizarra y azul, sobrio. Es el de la primera visita. */
+
+[data-estilo="clasico"][data-modo="oscuro"] {
+  --fondo: #0f172a;
+  --fondo-decoracion: none;
+  --superficie: #1e293b;
+  --superficie-decoracion: none;
+  --superficie-2: #16213a;
+  --borde: #334155;
+  --texto: #f8fafc;
+  --texto-suave: #cbd5e1;
+  --texto-tenue: #94a3b8;
+  --acento: #2563eb;
+  --acento-texto: #ffffff;
+  --boton-fondo: #2563eb;
+  --enlace: #93c5fd;
+  --seguro: #2ecc71;
+  --precaucion: #f39c12;
+  --peligro: #ff6b6b;
+  --neutro: #94a3b8;
+  --icono-texto: #0f172a;
+  --seguro-fondo: rgba(46, 204, 113, 0.08);
+  --precaucion-fondo: rgba(243, 156, 18, 0.08);
+  --peligro-fondo: rgba(255, 77, 77, 0.08);
+  --fuente-titulo: system-ui, sans-serif;
+  --fuente-texto: system-ui, sans-serif;
+  --titulo-peso: 700;
+  --titulo-espaciado: normal;
+  --titulo-mayusculas: none;
+  --radio: 16px;
+  --radio-control: 8px;
+  --grosor-borde: 1px;
+  --sombra-tarjeta: 0 10px 25px rgba(0, 0, 0, 0.3);
+  --sombra-control: none;
+  --brillo-titulo: none;
+}
+
+[data-estilo="clasico"][data-modo="claro"] {
+  --fondo: #e2e8f0;
+  --fondo-decoracion: none;
+  --superficie: #ffffff;
+  --superficie-decoracion: none;
+  --superficie-2: #f1f5f9;
+  --borde: #cbd5e1;
+  --texto: #0f172a;
+  --texto-suave: #334155;
+  --texto-tenue: #5b6b82;
+  --acento: #2563eb;
+  --acento-texto: #ffffff;
+  --boton-fondo: #2563eb;
+  --enlace: #1d4ed8;
+  --seguro: #15803d;
+  --precaucion: #b45309;
+  --peligro: #b91c1c;
+  --neutro: #5b6b82;
+  --icono-texto: #ffffff;
+  --seguro-fondo: rgba(21, 128, 61, 0.06);
+  --precaucion-fondo: rgba(180, 83, 9, 0.06);
+  --peligro-fondo: rgba(185, 28, 28, 0.06);
+  --fuente-titulo: system-ui, sans-serif;
+  --fuente-texto: system-ui, sans-serif;
+  --titulo-peso: 700;
+  --titulo-espaciado: normal;
+  --titulo-mayusculas: none;
+  --radio: 16px;
+  --radio-control: 8px;
+  --grosor-borde: 1px;
+  --sombra-tarjeta: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --sombra-control: none;
+  --brillo-titulo: none;
+}

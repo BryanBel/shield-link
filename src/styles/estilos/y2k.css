@@ -1,0 +1,109 @@
+/*
+ * Y2K — optimismo digital de los 2000: cromo, rosa neón, cian, iridiscencia, botones
+ * brillantes y destellos ✦. Títulos en Audiowide; el texto en Nunito, redondeada y legible.
+ */
+@import '@fontsource/audiowide/latin-400.css';
+@import '@fontsource/nunito/latin-400.css';
+@import '@fontsource/nunito/latin-700.css';
+@import '@fontsource/nunito/latin-800.css';
+
+[data-estilo="y2k"][data-modo="claro"] {
+  --fondo: #fce7f6;
+  --fondo-decoracion: radial-gradient(circle at 15% 20%, rgba(255, 105, 180, 0.35), transparent 40%), radial-gradient(circle at 85% 75%, rgba(0, 255, 255, 0.35), transparent 45%), linear-gradient(135deg, #ffe4f5, #e0fbff);
+  --superficie: #ffffff;
+  --superficie-decoracion: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(236, 233, 255, 0.6));
+  --superficie-2: #f7f0ff;
+  --borde: #e9c8ff;
+  --texto: #2e1065;
+  --texto-suave: #4c1d95;
+  --texto-tenue: #6b21a8;
+  --acento: #be185d;
+  --acento-texto: #ffffff;
+  --boton-fondo: linear-gradient(180deg, #ff8fcf 0%, #db2777 48%, #be185d 52%, #9d174d 100%);
+  --enlace: #7e22ce;
+  --seguro: #047857;
+  --precaucion: #b45309;
+  --peligro: #be123c;
+  --neutro: #6b21a8;
+  --icono-texto: #ffffff;
+  --seguro-fondo: rgba(4, 120, 87, 0.06);
+  --precaucion-fondo: rgba(180, 83, 9, 0.06);
+  --peligro-fondo: rgba(190, 18, 60, 0.06);
+  --fuente-titulo: 'Audiowide', system-ui, sans-serif;
+  --fuente-texto: 'Nunito', system-ui, sans-serif;
+  --titulo-peso: 400;
+  --titulo-espaciado: 0.02em;
+  --titulo-mayusculas: none;
+  --radio: 26px;
+  --radio-control: 999px;
+  --grosor-borde: 2px;
+  --sombra-tarjeta: 0 18px 40px rgba(219, 39, 119, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  --sombra-control: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 4px 12px rgba(190, 24, 93, 0.25);
+  --brillo-titulo: none;
+}
+
+[data-estilo="y2k"][data-modo="oscuro"] {
+  --fondo: #12031f;
+  --fondo-decoracion: radial-gradient(circle at 12% 18%, rgba(255, 105, 180, 0.28), transparent 42%), radial-gradient(circle at 88% 80%, rgba(0, 255, 255, 0.2), transparent 45%);
+  --superficie: #1f0b33;
+  --superficie-decoracion: linear-gradient(160deg, rgba(255, 255, 255, 0.06), transparent 40%);
+  --superficie-2: #2a1245;
+  --borde: #6b3fa0;
+  --texto: #fdf4ff;
+  --texto-suave: #f5d0fe;
+  --texto-tenue: #d8b4fe;
+  --acento: #ff69b4;
+  --acento-texto: #1a0526;
+  --boton-fondo: linear-gradient(180deg, #ffc2e2 0%, #ff69b4 48%, #f0489e 52%, #d63384 100%);
+  --enlace: #67e8f9;
+  --seguro: #34d399;
+  --precaucion: #fbbf24;
+  --peligro: #fb7185;
+  --neutro: #c4b5fd;
+  --icono-texto: #1a0526;
+  --seguro-fondo: rgba(52, 211, 153, 0.08);
+  --precaucion-fondo: rgba(251, 191, 36, 0.08);
+  --peligro-fondo: rgba(251, 113, 133, 0.08);
+  --fuente-titulo: 'Audiowide', system-ui, sans-serif;
+  --fuente-texto: 'Nunito', system-ui, sans-serif;
+  --titulo-peso: 400;
+  --titulo-espaciado: 0.02em;
+  --titulo-mayusculas: none;
+  --radio: 26px;
+  --radio-control: 999px;
+  --grosor-borde: 2px;
+  --sombra-tarjeta: 0 0 0 1px rgba(255, 105, 180, 0.35), 0 0 40px rgba(255, 105, 180, 0.18);
+  --sombra-control: inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 0 16px rgba(255, 105, 180, 0.35);
+  --brillo-titulo: none;
+}
+
+/* Título cromado: plata iridiscente recortada sobre el texto. */
+[data-estilo="y2k"] main > h1 .marca {
+  background: linear-gradient(180deg, #ffffff 0%, #c0c0c0 38%, #7a7a8c 50%, #e6e6f0 62%, #ff9ad5 82%, #7df9ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 0 rgba(148, 0, 211, 0.35));
+}
+
+/* Destellos ✦ en las esquinas de la tarjeta, con un brillo que late despacio. */
+[data-estilo="y2k"] main { position: relative; }
+[data-estilo="y2k"] main::before,
+[data-estilo="y2k"] main::after {
+  content: '✦';
+  position: absolute;
+  font-size: 1.6rem;
+  color: #ff69b4;
+  text-shadow: 0 0 10px rgba(255, 105, 180, 0.9);
+  animation: y2k-destello 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+[data-estilo="y2k"] main::before { top: 0.6rem; left: 0.9rem; }
+[data-estilo="y2k"] main::after { bottom: 0.6rem; right: 0.9rem; color: #00e5ff; text-shadow: 0 0 10px rgba(0, 229, 255, 0.9); animation-delay: 1.2s; }
+@keyframes y2k-destello {
+  0%, 100% { opacity: 0.35; transform: scale(0.85) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.15) rotate(20deg); }
+}
+
+/* Pista del menú secreto: la primera parte del código. */
+[data-estilo="y2k"] .pista::after { content: '✦ ↑ ↑ ↓ ↓ ✦'; }

@@ -1,0 +1,103 @@
+/*
+ * CONTRATO DE ESTILOS
+ * ===================
+ *
+ * Cada estilo de Shield Link es un conjunto de valores para las variables de abajo, en
+ * modo claro y en modo oscuro. Los componentes (src/styles/base.css) solo leen estas
+ * variables: nunca un color, una fuente o una sombra fija.
+ *
+ * Cómo agregar un estilo
+ * ----------------------
+ * 1. Crea src/styles/estilos/<id>.css. Se importa solo (Layout.astro carga todos los .css
+ *    de esta carpeta).
+ * 2. Define TODAS las variables de este :root en dos bloques, uno por modo, con este
+ *    selector exacto:
+ *
+ *        [data-estilo="<id>"][data-modo="claro"]  { --fondo: …; … }
+ *        [data-estilo="<id>"][data-modo="oscuro"] { --fondo: …; … }
+ *
+ *    Los adornos propios del estilo (destellos, scanlines, grillas…) van en reglas aparte,
+ *    siempre bajo [data-estilo="<id>"], nunca dentro de esos dos bloques.
+ * 3. Agrega { id, nombre, muestras } en src/styles/estilos/registro.js. Con eso aparece en
+ *    el botón de diseño aleatorio y en el menú secreto.
+ * 4. Corre `pnpm test`. El test del contrato falla si falta una variable, si un color que
+ *    debe ser sólido no lo es, o si un par de colores no llega al contraste AA (4,5:1), y
+ *    dice exactamente cuál.
+ *
+ * Variables
+ * ---------
+ * Color (los marcados con * deben ser hex sólidos: el test mide su contraste)
+ *   --fondo*              fondo de la página, detrás de la tarjeta
+ *   --fondo-decoracion    background-image extra de la página (degradados, grillas) o none
+ *   --superficie*         fondo de la tarjeta principal
+ *   --superficie-decoracion  background-image extra de la tarjeta o none
+ *   --superficie-2*       fondo de campos, datos de la ficha y bloques internos
+ *   --borde               color de bordes y separadores
+ *   --texto*              texto principal
+ *   --texto-suave*        texto secundario (detalles, descripciones)
+ *   --texto-tenue*        etiquetas pequeñas y notas
+ *   --acento*             color de marca: botón principal, foco
+ *   --acento-texto*       texto sobre --acento
+ *   --boton-fondo         fondo del botón principal (puede ser un degradado)
+ *   --enlace*             enlaces y acciones secundarias
+ *   --seguro* --precaucion* --peligro* --neutro*
+ *                         estados del veredicto; se usan como texto sobre --superficie y
+ *                         como fondo de íconos con --icono-texto encima
+ *   --icono-texto*        texto sobre los colores de estado
+ *   --seguro-fondo --precaucion-fondo --peligro-fondo
+ *                         tinte de la tarjeta del informe según el veredicto
+ * Tipografía
+ *   --fuente-titulo --fuente-texto   font-family completas, con respaldo
+ *   --titulo-peso --titulo-espaciado --titulo-mayusculas (none | uppercase)
+ * Forma y profundidad
+ *   --radio (tarjetas) --radio-control (botones, campos) --grosor-borde
+ *   --sombra-tarjeta --sombra-control --brillo-titulo (text-shadow del título o none)
+ */
+
+:root {
+  --fondo: #0f172a;
+  --fondo-decoracion: none;
+  --superficie: #1e293b;
+  --superficie-decoracion: none;
+  --superficie-2: #16213a;
+  --borde: #334155;
+  --texto: #f8fafc;
+  --texto-suave: #cbd5e1;
+  --texto-tenue: #94a3b8;
+  --acento: #2563eb;
+  --acento-texto: #ffffff;
+  --boton-fondo: #2563eb;
+  --enlace: #93c5fd;
+  --seguro: #2ecc71;
+  --precaucion: #f39c12;
+  --peligro: #ff6b6b;
+  --neutro: #94a3b8;
+  --icono-texto: #0f172a;
+  --seguro-fondo: rgba(46, 204, 113, 0.08);
+  --precaucion-fondo: rgba(243, 156, 18, 0.08);
+  --peligro-fondo: rgba(255, 77, 77, 0.08);
+  --fuente-titulo: system-ui, sans-serif;
+  --fuente-texto: system-ui, sans-serif;
+  --titulo-peso: 700;
+  --titulo-espaciado: normal;
+  --titulo-mayusculas: none;
+  --radio: 16px;
+  --radio-control: 8px;
+  --grosor-borde: 1px;
+  --sombra-tarjeta: 0 10px 25px rgba(0, 0, 0, 0.3);
+  --sombra-control: none;
+  --brillo-titulo: none;
+}
+
+[data-modo='claro'] { color-scheme: light; }
+[data-modo='oscuro'] { color-scheme: dark; }
+
+/* Quien pide menos movimiento no ve destellos, parpadeos ni transiciones. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

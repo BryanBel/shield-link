@@ -1,7 +1,21 @@
 // @ts-check
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+
 import { defineConfig, passthroughImageService } from 'astro/config';
 
 import vercel from '@astrojs/vercel';
+
+/**
+ * Astro hashes the scripts it bundles, but not `is:inline` ones. The layout has exactly one
+ * — the few lines that apply the saved style before first paint — so its hash is computed
+ * here from the file itself, on every build. Editing that script can never leave the policy
+ * pointing at a stale hash and the page with an unstyled flash.
+ */
+const layout = readFileSync(new URL('./src/layouts/Layout.astro', import.meta.url), 'utf8');
+const scriptEnLinea = layout.match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
+if (!scriptEnLinea) throw new Error('Layout.astro: no se encontró el script is:inline que la CSP debe permitir');
+const hashScriptEnLinea = `sha256-${createHash('sha256').update(scriptEnLinea).digest('base64')}`;
 
 // https://astro.build/config
 export default defineConfig({
@@ -35,6 +49,7 @@ export default defineConfig({
         "base-uri 'self'",
         "form-action 'self'",
       ],
+      scriptDirective: { hashes: [/** @type {`sha256-${string}`} */ (hashScriptEnLinea)] },
     },
   },
 });

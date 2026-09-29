@@ -153,6 +153,26 @@ each fresh analysis also visits the site. So fresh analyses are limited per clie
 minute and 50 a day. Past that, `/api/scan` answers `429`. Cached reports cost nothing and
 are never counted.
 
+## Designs
+
+The page comes in five styles — Classic, Y2K, Cyberpunk, Clay and Vaporwave — each in light
+and dark mode. The dice button in the corner switches to a random one; the sun and moon
+switch the mode, which otherwise follows the system. The choice is remembered, and applied
+before the first paint so the page never flashes the default look. There is also something
+hidden for the curious.
+
+Every style is a set of values for the same variables, defined in
+[`src/styles/estilos/_contrato.css`](src/styles/estilos/_contrato.css); the components only
+read those variables. Adding a style is one CSS file in that folder and one line in
+[`registro.js`](src/styles/estilos/registro.js) — nothing else changes. `pnpm test` checks
+every registered style against the contract in both modes: that no variable is missing,
+and that every pair of colours drawn as text reaches WCAG AA contrast (4.5:1). The
+original design's button, white on `#3b82f6`, measured 3.68:1 and never did.
+
+Fonts are self-hosted, so the Content-Security-Policy stays at `'self'`, and a browser only
+downloads the ones the active style uses. Anyone who asks their system for reduced motion
+gets no sparkles, blinking cursors or moving grids.
+
 ## Stack
 
 | Layer | Choice | Why |

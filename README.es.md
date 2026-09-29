@@ -159,6 +159,26 @@ todos los visitantes, y cada análisis nuevo además visita el sitio. Por eso lo
 nuevos tienen un límite por cliente: 4 por minuto y 50 por día. Pasado el límite,
 `/api/scan` responde `429`. Los informes en caché no cuestan nada y nunca cuentan.
 
+## Diseños
+
+La página viene en cinco estilos —Clásico, Y2K, Cyberpunk, Clay y Vaporwave—, cada uno en
+modo claro y oscuro. El dado de la esquina cambia a uno al azar; el sol y la luna cambian el
+modo, que si no sigue al del sistema. La elección se recuerda y se aplica antes del primer
+pintado, así que la página nunca parpadea con el diseño por defecto. También hay algo
+escondido para los curiosos.
+
+Cada estilo es un conjunto de valores para las mismas variables, definidas en
+[`src/styles/estilos/_contrato.css`](src/styles/estilos/_contrato.css); los componentes solo
+leen esas variables. Agregar un estilo es un archivo CSS en esa carpeta y una línea en
+[`registro.js`](src/styles/estilos/registro.js): nada más cambia. `pnpm test` revisa cada
+estilo registrado contra el contrato en los dos modos: que no falte ninguna variable, y que
+cada par de colores que se dibuja como texto llegue al contraste AA de WCAG (4,5:1). El botón
+del diseño original, blanco sobre `#3b82f6`, medía 3,68:1 y nunca llegó.
+
+Las fuentes están alojadas en el propio sitio, así que la Content-Security-Policy se queda
+en `'self'`, y el navegador solo descarga las del estilo activo. Quien le pide a su sistema
+menos movimiento no ve destellos, cursores que parpadean ni grillas que se mueven.
+
 ## Stack
 
 | Capa | Elección | Por qué |

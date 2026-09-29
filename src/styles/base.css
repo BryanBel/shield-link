@@ -1,0 +1,430 @@
+/*
+ * Componentes de Shield Link. Todo color, fuente, radio y sombra sale de las variables del
+ * contrato (src/styles/estilos/_contrato.css); aquí no hay ni un valor de estilo fijo, para
+ * que cualquier estilo registrado vista la página entera.
+ */
+
+/* ---------- Página ---------- */
+
+html {
+  font-family: var(--fuente-texto);
+  background-color: var(--fondo);
+  color: var(--texto);
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--fondo);
+  background-image: var(--fondo-decoracion);
+  background-attachment: fixed;
+}
+
+main {
+  max-width: 640px;
+  width: 90%;
+  box-sizing: border-box;
+  margin: 2rem 0;
+  padding: 2rem;
+  text-align: center;
+  background-color: var(--superficie);
+  background-image: var(--superficie-decoracion);
+  border: var(--grosor-borde) solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+main > h1 {
+  margin: 0.2rem 0 0.4rem;
+  font-family: var(--fuente-titulo);
+  font-weight: var(--titulo-peso);
+  letter-spacing: var(--titulo-espaciado);
+  text-transform: var(--titulo-mayusculas);
+  text-shadow: var(--brillo-titulo);
+  font-size: 2rem;
+}
+main > h1 .logo { cursor: default; user-select: none; }
+main > .lema { color: var(--texto-suave); margin: 0 0 1.5rem; }
+
+.hidden { display: none; }
+#result:focus { outline: none; }
+
+/* ---------- Controles ---------- */
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  margin-bottom: 1rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--superficie-2);
+  border: var(--grosor-borde) solid var(--borde);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-control);
+}
+input::placeholder { color: var(--texto-tenue); }
+
+button {
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--acento-texto);
+  background: var(--boton-fondo);
+  border: none;
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-control);
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.2s;
+}
+button:hover { filter: brightness(1.08); }
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.secondary-btn {
+  width: auto;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  color: var(--texto);
+  background: var(--superficie-2);
+  border: var(--grosor-borde) solid var(--borde);
+}
+
+/* ---------- Cargando ---------- */
+
+.loader {
+  width: 30px;
+  height: 30px;
+  margin: 1rem auto;
+  border: 4px solid var(--borde);
+  border-top-color: var(--acento);
+  border-radius: 50%;
+  animation: girar 1s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+.cargando-texto { color: var(--texto-suave); }
+
+/* ---------- Informe ---------- */
+
+.informe {
+  text-align: left;
+  padding: 1.25rem;
+  border: 2px solid var(--color-nivel, var(--borde));
+  border-radius: calc(var(--radio) * 0.75);
+  background: var(--fondo-nivel, transparent);
+}
+.informe-seguro { --color-nivel: var(--seguro); --fondo-nivel: var(--seguro-fondo); }
+.informe-precaucion { --color-nivel: var(--precaucion); --fondo-nivel: var(--precaucion-fondo); }
+.informe-peligroso { --color-nivel: var(--peligro); --fondo-nivel: var(--peligro-fondo); }
+.informe-aviso { --color-nivel: var(--precaucion); --fondo-nivel: var(--precaucion-fondo); text-align: center; }
+
+.informe-cabecera { display: flex; align-items: center; gap: 0.75rem; }
+.informe-aviso .informe-cabecera { justify-content: center; }
+.informe-icono { font-size: 2.25rem; line-height: 1; }
+.informe-cabecera h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-family: var(--fuente-titulo);
+  font-weight: var(--titulo-peso);
+  letter-spacing: var(--titulo-espaciado);
+  text-transform: var(--titulo-mayusculas);
+}
+
+.certeza {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.certeza-alta { color: var(--seguro); }
+.certeza-media { color: var(--precaucion); }
+.certeza-baja { color: var(--texto-tenue); }
+
+.informe-enlace {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0.9rem 0 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--superficie-2);
+  border-radius: calc(var(--radio-control) * 0.75);
+  overflow-wrap: anywhere;
+}
+.informe-enlace strong { font-size: 1.05rem; }
+.informe-enlace span { font-size: 0.8rem; color: var(--texto-tenue); }
+.informe-motivo { margin: 1rem 0; line-height: 1.5; }
+
+.acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
+.acciones .secondary-btn { margin: 0; }
+
+.boton-abrir {
+  width: auto;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  border: 2px solid transparent;
+}
+.boton-seguro { background: var(--seguro); color: var(--icono-texto); }
+.boton-precaucion { background: var(--precaucion); color: var(--icono-texto); }
+/* Peligroso: a propósito, el botón menos atractivo de la tarjeta. */
+.boton-peligroso { background: transparent; color: var(--peligro); border-color: var(--peligro); box-shadow: none; }
+.boton-abrir:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+
+/* ---------- Qué es este sitio ---------- */
+
+.sitio { margin: 1.25rem 0; }
+.sitio h3,
+.detecciones h3,
+.hallazgos h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texto-tenue);
+}
+.sitio-dice { margin: 0 0 0.6rem; font-size: 0.9rem; line-height: 1.45; font-style: italic; color: var(--texto-suave); }
+.sitio-fuente { font-style: normal; color: var(--texto-tenue); }
+.sitio-conclusion { margin: 0; display: flex; gap: 0.6rem; align-items: flex-start; font-weight: 700; font-size: 0.95rem; line-height: 1.4; }
+.sitio-coherente .senal-icono { background: var(--seguro); }
+.sitio-dudoso .senal-icono { background: var(--precaucion); }
+.sitio-no-cuadra .senal-icono { background: var(--peligro); }
+.sitio-sin-datos .senal-icono { background: var(--neutro); }
+.sitio-comprobacion { margin-top: 0.35rem; }
+.sitio-comprobacion > summary { cursor: pointer; font-size: 0.8rem; color: var(--enlace); margin-left: 2.1rem; }
+.sitio-puntos { margin: 0.4rem 0 0 2.1rem; padding: 0; list-style: none; display: grid; gap: 0.25rem; }
+.sitio-puntos li { font-size: 0.85rem; color: var(--texto-suave); line-height: 1.4; }
+.sitio-puntos li::before { margin-right: 0.35rem; font-weight: 700; }
+.punto-bien::before { content: '✓'; color: var(--seguro); }
+.punto-alerta::before { content: '!'; color: var(--precaucion); }
+.punto-peligro::before { content: '✕'; color: var(--peligro); }
+.punto-info::before { content: '·'; color: var(--neutro); }
+.sitio-categorias { margin: 0.5rem 0 0 2.1rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.etiqueta {
+  padding: 0.1rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+}
+
+/* ---------- Ficha ---------- */
+
+.ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; margin: 0; }
+.ficha-dato {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  background: var(--superficie-2);
+  border-radius: calc(var(--radio-control) * 0.75);
+  border-left: 3px solid var(--color-dato, var(--borde));
+}
+.ficha-dato dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texto-tenue); }
+.ficha-dato dd { margin: 0.15rem 0 0; font-weight: 700; font-size: 0.95rem; overflow-wrap: anywhere; }
+.ficha-bien { --color-dato: var(--seguro); }
+.ficha-alerta { --color-dato: var(--precaucion); }
+.ficha-peligro { --color-dato: var(--peligro); }
+
+/* ---------- Por qué lo marcan ---------- */
+
+.detecciones {
+  margin: 0 0 1.25rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--superficie-2);
+  border-radius: calc(var(--radio-control) * 0.75);
+  border-left: 3px solid var(--color-deteccion, var(--neutro));
+}
+.detecciones-falso-positivo { --color-deteccion: var(--seguro); }
+.detecciones-prediccion,
+.detecciones-minoritaria,
+.detecciones-plataforma { --color-deteccion: var(--precaucion); }
+.detecciones-amenaza { --color-deteccion: var(--peligro); }
+.detecciones h3 { color: var(--texto); text-transform: none; letter-spacing: 0; font-size: 0.95rem; }
+.detecciones p { margin: 0; font-size: 0.87rem; line-height: 1.5; color: var(--texto-suave); }
+.detecciones-motores { margin: 0.6rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.2rem; font-size: 0.8rem; color: var(--texto-tenue); }
+.detecciones-motores strong { color: var(--texto); }
+
+/* ---------- Hallazgos ---------- */
+
+.hallazgos { margin-bottom: 1.25rem; }
+.hallazgos > .senales { margin-bottom: 0.5rem; }
+.senales { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.senal { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.6rem; align-items: start; }
+.senal strong { display: block; font-size: 0.95rem; }
+.senal p { margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--texto-suave); line-height: 1.45; }
+.senal-icono {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-style: normal;
+  color: var(--icono-texto);
+}
+.senal-peligro .senal-icono { background: var(--peligro); }
+.senal-alerta .senal-icono { background: var(--precaucion); }
+.senal-bien .senal-icono { background: var(--seguro); }
+.senal-info .senal-icono { background: var(--neutro); }
+
+.senales-plegadas { margin-top: 0.4rem; }
+.senales-plegadas > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 0.95rem; }
+.senales-plegadas > summary::-webkit-details-marker { display: none; }
+.senales-plegadas > summary::after { content: '▸'; color: var(--texto-tenue); }
+.senales-plegadas[open] > summary::after { content: '▾'; }
+.senales-plegadas > .senales { margin: 0.5rem 0 0 0.25rem; }
+.senales-plegadas.senal-bien > summary .senal-icono { background: var(--seguro); }
+.senales-plegadas.senal-info > summary .senal-icono { background: var(--neutro); }
+
+/* ---------- Detalles técnicos ---------- */
+
+.informe-tecnico { border: 1px solid var(--borde); border-radius: calc(var(--radio-control) * 0.75); }
+.informe-tecnico > summary { cursor: pointer; font-weight: 700; padding: 0.6rem 0.8rem; }
+.tecnico-cuerpo { padding: 0 0.8rem 0.8rem; display: grid; gap: 1rem; }
+.tecnico-bloque h4 { margin: 0 0 0.4rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--enlace); }
+.tecnico-bloque dl { margin: 0; display: grid; grid-template-columns: minmax(7rem, 35%) 1fr; gap: 0.3rem 0.75rem; }
+.tecnico-bloque dt { font-size: 0.8rem; color: var(--texto-tenue); }
+.tecnico-bloque dd { margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
+.tecnico-bloque ul { margin: 0; padding-left: 1.1rem; }
+.enlace-externo { color: var(--enlace); font-size: 0.85rem; font-weight: 700; justify-self: start; }
+
+.informe-nota { margin: 1rem 0 0; font-size: 0.8rem; color: var(--texto-tenue); }
+.informe-extra { margin-top: 1.25rem; }
+
+/* ---------- Diálogos ---------- */
+
+dialog {
+  max-width: min(440px, calc(100vw - 2rem));
+  padding: 1.25rem 1.4rem;
+  text-align: left;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-top: 4px solid var(--color-nivel, var(--acento));
+  border-radius: calc(var(--radio) * 0.75);
+  box-shadow: var(--sombra-tarjeta);
+}
+dialog::backdrop { background: rgba(2, 6, 23, 0.7); }
+dialog h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-family: var(--fuente-titulo);
+  font-weight: var(--titulo-peso);
+  letter-spacing: var(--titulo-espaciado);
+  text-transform: var(--titulo-mayusculas);
+}
+dialog p { margin: 0.5rem 0; font-size: 0.9rem; line-height: 1.45; color: var(--texto-suave); }
+.dialogo-seguro { --color-nivel: var(--seguro); }
+.dialogo-precaucion { --color-nivel: var(--precaucion); }
+.dialogo-peligroso { --color-nivel: var(--peligro); }
+dialog .dialogo-url { font-size: 0.8rem; color: var(--texto-tenue); overflow-wrap: anywhere; }
+.dialogo-casilla { display: flex; gap: 0.5rem; align-items: center; margin: 0.9rem 0 0; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.dialogo-casilla input { width: auto; margin: 0; box-shadow: none; }
+.dialogo-acciones { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.1rem; }
+.dialogo-acciones .secondary-btn { margin: 0; }
+
+/* ---------- Diseño: botones flotantes y menú secreto ---------- */
+
+.controles {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 60;
+  display: flex;
+  gap: 0.5rem;
+}
+.control {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--texto);
+  background: var(--superficie);
+  border: var(--grosor-borde) solid var(--borde);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-control);
+}
+.control svg { width: 22px; height: 22px; }
+.control[hidden] { display: none; }
+
+.menu-estilos ul { list-style: none; margin: 0.75rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.opcion-estilo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--texto);
+  background: var(--superficie-2);
+  border: 2px solid transparent;
+  box-shadow: none;
+  text-align: left;
+}
+.opcion-estilo[aria-pressed='true'] { border-color: var(--acento); }
+.muestras { display: flex; gap: 0.25rem; }
+.muestra { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--borde); }
+.menu-modo { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+.menu-modo .secondary-btn { flex: 1; margin: 0; }
+.menu-modo .secondary-btn[aria-pressed='true'] { border-color: var(--acento); }
+
+/* La pista: casi invisible, para quien mira con atención. Cada estilo pone su pedazo. */
+.pista {
+  position: fixed;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  font: 0.75rem ui-monospace, monospace;
+  color: var(--texto-tenue);
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+ * Pantallas anchas: el informe entero cabe en la ventana. El encabezado se achica a una
+ * línea, la tarjeta se parte en dos columnas y lo que crece — las señales plegadas, el
+ * detalle técnico — se desplaza dentro de su columna en vez de empujar la página.
+ * Los teléfonos mantienen una columna: no hay alto donde meterla.
+ */
+@media (min-width: 960px) and (min-height: 560px) {
+  main.con-resultado {
+    max-width: 1120px;
+    height: calc(100dvh - 3rem);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+  main.con-resultado > h1 { font-size: 1.5rem; margin: 0; }
+  main.con-resultado > .lema { margin: 0.25rem 0 1rem; font-size: 0.85rem; }
+  main.con-resultado #result:not(.hidden) { flex: 1; min-height: 0; display: flex; }
+
+  .con-resultado .informe {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+  .con-resultado .informe-principal,
+  .con-resultado .informe-extra {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .con-resultado .informe-extra {
+    margin-top: 0;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--borde);
+  }
+  .con-resultado .informe-motivo { margin: 0.75rem 0; }
+}

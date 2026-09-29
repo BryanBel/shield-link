@@ -1,0 +1,86 @@
+/*
+ * Clay — claymorphism: superficies que parecen de plastilina, pastel lavanda, sombras
+ * dobles por fuera y por dentro, y botones que se aplastan al presionarlos. Títulos en
+ * Nunito extra negrita; el texto en DM Sans.
+ */
+@import '@fontsource/nunito/latin-800.css';
+@import '@fontsource/nunito/latin-900.css';
+@import '@fontsource/dm-sans/latin-400.css';
+@import '@fontsource/dm-sans/latin-700.css';
+
+[data-estilo="clay"][data-modo="claro"] {
+  --fondo: #ece6f7;
+  --fondo-decoracion: radial-gradient(circle at 10% 15%, rgba(167, 139, 250, 0.35), transparent 35%), radial-gradient(circle at 90% 85%, rgba(244, 114, 182, 0.28), transparent 38%);
+  --superficie: #f7f4fc;
+  --superficie-decoracion: none;
+  --superficie-2: #efe9f8;
+  --borde: #e2d8f2;
+  --texto: #332f3a;
+  --texto-suave: #45404e;
+  --texto-tenue: #5c5766;
+  --acento: #7c3aed;
+  --acento-texto: #ffffff;
+  --boton-fondo: linear-gradient(180deg, #a78bfa, #7c3aed);
+  --enlace: #6d28d9;
+  --seguro: #047857;
+  --precaucion: #a0480a;
+  --peligro: #be123c;
+  --neutro: #5c5766;
+  --icono-texto: #ffffff;
+  --seguro-fondo: rgba(4, 120, 87, 0.05);
+  --precaucion-fondo: rgba(160, 72, 10, 0.05);
+  --peligro-fondo: rgba(190, 18, 60, 0.05);
+  --fuente-titulo: 'Nunito', system-ui, sans-serif;
+  --fuente-texto: 'DM Sans', system-ui, sans-serif;
+  --titulo-peso: 900;
+  --titulo-espaciado: -0.01em;
+  --titulo-mayusculas: none;
+  --radio: 32px;
+  --radio-control: 20px;
+  --grosor-borde: 0;
+  --sombra-tarjeta: 16px 16px 32px rgba(124, 58, 237, 0.16), -12px -12px 28px rgba(255, 255, 255, 0.95), inset 2px 2px 4px rgba(255, 255, 255, 0.9), inset -4px -4px 8px rgba(124, 58, 237, 0.07);
+  --sombra-control: 6px 6px 14px rgba(124, 58, 237, 0.22), -4px -4px 10px rgba(255, 255, 255, 0.9), inset 1px 1px 2px rgba(255, 255, 255, 0.7);
+  --brillo-titulo: 2px 2px 0 rgba(255, 255, 255, 0.9), 4px 4px 10px rgba(124, 58, 237, 0.2);
+}
+
+[data-estilo="clay"][data-modo="oscuro"] {
+  --fondo: #1c1826;
+  --fondo-decoracion: radial-gradient(circle at 10% 15%, rgba(167, 139, 250, 0.16), transparent 35%), radial-gradient(circle at 90% 85%, rgba(244, 114, 182, 0.12), transparent 38%);
+  --superficie: #26202f;
+  --superficie-decoracion: none;
+  --superficie-2: #2e2738;
+  --borde: #3b3347;
+  --texto: #f3effa;
+  --texto-suave: #d9d2e6;
+  --texto-tenue: #b3a9c4;
+  --acento: #a78bfa;
+  --acento-texto: #1c1826;
+  --boton-fondo: linear-gradient(180deg, #c4b5fd, #a78bfa);
+  --enlace: #c4b5fd;
+  --seguro: #6ee7b7;
+  --precaucion: #fcd34d;
+  --peligro: #fda4af;
+  --neutro: #b3a9c4;
+  --icono-texto: #1c1826;
+  --seguro-fondo: rgba(110, 231, 183, 0.06);
+  --precaucion-fondo: rgba(252, 211, 77, 0.06);
+  --peligro-fondo: rgba(253, 164, 175, 0.06);
+  --fuente-titulo: 'Nunito', system-ui, sans-serif;
+  --fuente-texto: 'DM Sans', system-ui, sans-serif;
+  --titulo-peso: 900;
+  --titulo-espaciado: -0.01em;
+  --titulo-mayusculas: none;
+  --radio: 32px;
+  --radio-control: 20px;
+  --grosor-borde: 0;
+  --sombra-tarjeta: 14px 14px 28px rgba(0, 0, 0, 0.45), -8px -8px 20px rgba(255, 255, 255, 0.035), inset 1px 1px 2px rgba(255, 255, 255, 0.07);
+  --sombra-control: 5px 5px 12px rgba(0, 0, 0, 0.4), -3px -3px 8px rgba(255, 255, 255, 0.04), inset 1px 1px 1px rgba(255, 255, 255, 0.12);
+  --brillo-titulo: 3px 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Los botones se aplastan un poco al presionarlos, como plastilina. */
+[data-estilo="clay"] button { transition: transform 120ms ease, box-shadow 120ms ease; }
+[data-estilo="clay"] button:active { transform: scale(0.95); }
+
+/* Pista del menú secreto: en el celular no hay flechas, pero sí el escudo. */
+[data-estilo="clay"] .pista::after { content: '🛡 × 7'; }

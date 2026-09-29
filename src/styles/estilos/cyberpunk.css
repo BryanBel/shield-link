@@ -1,0 +1,107 @@
+/*
+ * Cyberpunk — terminal de neón sobre negro: verde matrix, magenta, cian, esquinas cortadas
+ * y scanlines. Títulos en Orbitron; el texto en JetBrains Mono.
+ */
+@import '@fontsource/orbitron/latin-700.css';
+@import '@fontsource/orbitron/latin-900.css';
+@import '@fontsource/jetbrains-mono/latin-400.css';
+@import '@fontsource/jetbrains-mono/latin-700.css';
+
+[data-estilo="cyberpunk"][data-modo="oscuro"] {
+  --fondo: #05070d;
+  --fondo-decoracion: linear-gradient(rgba(0, 255, 156, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 156, 0.05) 1px, transparent 1px);
+  --superficie: #0b1018;
+  --superficie-decoracion: linear-gradient(180deg, rgba(0, 255, 156, 0.04), transparent 30%);
+  --superficie-2: #0f1722;
+  --borde: #0e6b5c;
+  --texto: #e6fff5;
+  --texto-suave: #a7f3d0;
+  --texto-tenue: #5eead4;
+  --acento: #00ff9c;
+  --acento-texto: #02140c;
+  --boton-fondo: #00ff9c;
+  --enlace: #22d3ee;
+  --seguro: #00ff9c;
+  --precaucion: #ffd400;
+  --peligro: #ff4d94;
+  --neutro: #7dd3fc;
+  --icono-texto: #02140c;
+  --seguro-fondo: rgba(0, 255, 156, 0.05);
+  --precaucion-fondo: rgba(255, 212, 0, 0.05);
+  --peligro-fondo: rgba(255, 77, 148, 0.06);
+  --fuente-titulo: 'Orbitron', system-ui, sans-serif;
+  --fuente-texto: 'JetBrains Mono', ui-monospace, monospace;
+  --titulo-peso: 900;
+  --titulo-espaciado: 0.08em;
+  --titulo-mayusculas: uppercase;
+  --radio: 2px;
+  --radio-control: 0;
+  --grosor-borde: 1px;
+  --sombra-tarjeta: 0 0 0 1px rgba(0, 255, 156, 0.35), 0 0 28px rgba(0, 255, 156, 0.12);
+  --sombra-control: 0 0 12px rgba(0, 255, 156, 0.35);
+  --brillo-titulo: 0 0 8px rgba(0, 255, 156, 0.7), 0 0 22px rgba(0, 255, 156, 0.35);
+}
+
+[data-estilo="cyberpunk"][data-modo="claro"] {
+  --fondo: #e6ecea;
+  --fondo-decoracion: linear-gradient(rgba(15, 118, 110, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 118, 110, 0.07) 1px, transparent 1px);
+  --superficie: #fbfdfc;
+  --superficie-decoracion: none;
+  --superficie-2: #eef4f2;
+  --borde: #0f766e;
+  --texto: #0b1f1a;
+  --texto-suave: #134e4a;
+  --texto-tenue: #2f5f58;
+  --acento: #0f766e;
+  --acento-texto: #ffffff;
+  --boton-fondo: #0f766e;
+  --enlace: #0e7490;
+  --seguro: #047857;
+  --precaucion: #92400e;
+  --peligro: #be185d;
+  --neutro: #2f5f58;
+  --icono-texto: #ffffff;
+  --seguro-fondo: rgba(4, 120, 87, 0.05);
+  --precaucion-fondo: rgba(146, 64, 14, 0.05);
+  --peligro-fondo: rgba(190, 24, 93, 0.05);
+  --fuente-titulo: 'Orbitron', system-ui, sans-serif;
+  --fuente-texto: 'JetBrains Mono', ui-monospace, monospace;
+  --titulo-peso: 900;
+  --titulo-espaciado: 0.08em;
+  --titulo-mayusculas: uppercase;
+  --radio: 2px;
+  --radio-control: 0;
+  --grosor-borde: 1px;
+  --sombra-tarjeta: 6px 6px 0 rgba(15, 118, 110, 0.25);
+  --sombra-control: none;
+  --brillo-titulo: none;
+}
+
+/* La grilla del fondo necesita tamaño; los degradados solos no lo tienen. */
+[data-estilo="cyberpunk"] body { background-size: 32px 32px; }
+
+/* Esquinas cortadas, como una pantalla de HUD. */
+[data-estilo="cyberpunk"] main {
+  clip-path: polygon(0 18px, 18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+}
+
+/* Scanlines de monitor CRT, solo en oscuro y muy tenues para no cansar la lectura. */
+[data-estilo="cyberpunk"][data-modo="oscuro"] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+  z-index: 50;
+}
+
+/* Un cursor de terminal que parpadea detrás del título. */
+[data-estilo="cyberpunk"] main > h1 .marca::after {
+  content: '_';
+  margin-left: 0.15em;
+  animation: cyber-cursor 1s steps(1) infinite;
+}
+@keyframes cyber-cursor { 50% { opacity: 0; } }
+
+/* Pista del menú secreto: la segunda parte del código, como un comentario de terminal. */
+[data-estilo="cyberpunk"] .pista::after { content: '// ← → ← →'; }
