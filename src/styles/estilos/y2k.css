@@ -9,7 +9,8 @@
 
 [data-estilo="y2k"][data-modo="claro"] {
   --fondo: #fce7f6;
-  --fondo-decoracion: radial-gradient(circle at 15% 20%, rgba(255, 105, 180, 0.35), transparent 40%), radial-gradient(circle at 85% 75%, rgba(0, 255, 255, 0.35), transparent 45%), linear-gradient(135deg, #ffe4f5, #e0fbff);
+  /* Holographic foil: an iridescent sweep under pink and cyan glows. */
+  --fondo-decoracion: radial-gradient(circle at 15% 20%, rgba(255, 105, 180, 0.45), transparent 40%), radial-gradient(circle at 85% 75%, rgba(0, 255, 255, 0.4), transparent 45%), conic-gradient(from 210deg at 60% 45%, #ffd1f0, #cdf7ff, #e8d8ff, #fff1c2, #ffd1f0);
   --superficie: #ffffff;
   --superficie-decoracion: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(236, 233, 255, 0.6));
   --superficie-2: #f7f0ff;
@@ -37,7 +38,7 @@
   --radio: 26px;
   --radio-control: 999px;
   --grosor-borde: 2px;
-  --sombra-tarjeta: 0 18px 40px rgba(219, 39, 119, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  --sombra-tarjeta: 0 0 0 3px #d9d9e6, 0 0 0 5px #ffffff, 0 18px 44px rgba(219, 39, 119, 0.28), 0 0 60px rgba(0, 229, 255, 0.25);
   --sombra-control: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 4px 12px rgba(190, 24, 93, 0.25);
   --brillo-titulo: none;
 }

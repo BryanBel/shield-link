@@ -3,31 +3,15 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Shield Link - Análisis de Seguridad">
-    <div class="controles">
-        <button id="btnMenu" class="control" type="button" aria-label="Elegir diseño" title="Elegir diseño" hidden>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="13.5" cy="6.5" r="1.5"></circle><circle cx="17.5" cy="10.5" r="1.5"></circle><circle cx="8.5" cy="7.5" r="1.5"></circle><circle cx="6.5" cy="12.5" r="1.5"></circle>
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16c3.1 0 5.6-2.5 5.6-5.6C21.6 6.1 17.3 2 12 2z"></path>
-            </svg>
-        </button>
-        <button id="btnDiseno" class="control" type="button" aria-label="Cambiar a un diseño al azar" title="Diseño al azar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
-                <circle cx="8" cy="8" r="1.2" fill="currentColor"></circle><circle cx="16" cy="8" r="1.2" fill="currentColor"></circle>
-                <circle cx="12" cy="12" r="1.2" fill="currentColor"></circle>
-                <circle cx="8" cy="16" r="1.2" fill="currentColor"></circle><circle cx="16" cy="16" r="1.2" fill="currentColor"></circle>
-            </svg>
-        </button>
-        <button id="btnModo" class="control" type="button" aria-label="Cambiar modo claro u oscuro" title="Claro u oscuro">
-            <svg id="iconoSol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="4"></circle>
-                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
-            </svg>
-            <svg id="iconoLuna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
-            </svg>
-        </button>
-    </div>
+    <!-- Se mueve por la pantalla: temas.js lo posiciona y lo cambia de lugar tras cada estilo. -->
+    <button id="btnDado" class="dado" type="button" aria-label="Cambiar a un diseño al azar" title="Diseño al azar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+            <circle cx="8" cy="8" r="1.2" fill="currentColor"></circle><circle cx="16" cy="8" r="1.2" fill="currentColor"></circle>
+            <circle cx="12" cy="12" r="1.2" fill="currentColor"></circle>
+            <circle cx="8" cy="16" r="1.2" fill="currentColor"></circle><circle cx="16" cy="16" r="1.2" fill="currentColor"></circle>
+        </svg>
+    </button>
 
     <main>
         <h1><span class="logo" aria-hidden="true">🛡️</span> <span class="marca">Shield Link</span></h1>

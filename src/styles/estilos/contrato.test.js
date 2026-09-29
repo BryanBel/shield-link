@@ -16,6 +16,8 @@ const leer = (archivo) => readFileSync(new URL(archivo, carpeta), 'utf8');
 const declaraciones = (bloque) =>
   Object.fromEntries(
     bloque
+      // Comments are allowed inside a style's blocks; they are not declarations.
+      .replace(/\/\*[\s\S]*?\*\//g, '')
       .split(';')
       .map((d) => d.trim())
       .filter((d) => d.startsWith('--'))

@@ -43,12 +43,13 @@
 }
 
 [data-estilo="vaporwave"][data-modo="claro"] {
-  --fondo: #fff1fa;
-  --fondo-decoracion: linear-gradient(180deg, #ffd6ef 0%, #e9d5ff 45%, #cffafe 100%);
+  --fondo: #ff9ecf;
+  /* Daylight vaporwave: a hot sunset sky over a purple ground — the same scene, lit. */
+  --fondo-decoracion: linear-gradient(180deg, #ff5ec4 0%, #ff8fa3 26%, #ffc27a 48%, #ffe29a 54.5%, #7b2ff7 55%, #3b1a78 100%);
   --superficie: #ffffff;
-  --superficie-decoracion: none;
+  --superficie-decoracion: linear-gradient(180deg, rgba(255, 113, 206, 0.08), transparent 35%);
   --superficie-2: #fdf2ff;
-  --borde: #e9a8f5;
+  --borde: #ff71ce;
   --texto: #3b0764;
   --texto-suave: #581c87;
   --texto-tenue: #6b21a8;
@@ -72,9 +73,9 @@
   --radio: 6px;
   --radio-control: 4px;
   --grosor-borde: 2px;
-  --sombra-tarjeta: 8px 8px 0 #67e8f9, 16px 16px 0 rgba(244, 114, 182, 0.35);
-  --sombra-control: 4px 4px 0 #67e8f9;
-  --brillo-titulo: 2px 2px 0 #f9a8d4, 4px 4px 0 #67e8f9;
+  --sombra-tarjeta: 8px 8px 0 #01cdfe, 16px 16px 0 rgba(255, 113, 206, 0.7);
+  --sombra-control: 4px 4px 0 #01cdfe;
+  --brillo-titulo: 3px 3px 0 #ff71ce, 6px 6px 0 #01cdfe;
 }
 
 /* VT323 es una fuente de pantalla chica: necesita más tamaño para leerse igual. */
@@ -97,9 +98,25 @@
   transform-origin: bottom;
   animation: vapor-grilla 6s linear infinite;
 }
-[data-estilo="vaporwave"][data-modo="claro"] body::before { opacity: 0.55; }
 @keyframes vapor-grilla { to { background-position: 0 40px; } }
 [data-estilo="vaporwave"] main { position: relative; z-index: 1; }
+
+/* The sun, sitting on the horizon, sliced by the classic stripes. */
+[data-estilo="vaporwave"] body::after {
+  content: '';
+  position: fixed;
+  left: 50%;
+  bottom: 45vh;
+  width: 38vmin;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(180deg, #fff27a 0%, #ffb347 40%, #ff4fa3 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 52%, transparent 52% 56%, #000 56% 64%, transparent 64% 69%, #000 69% 76%, transparent 76% 82%, #000 82% 88%, transparent 88% 95%, #000 95%);
+  mask-image: linear-gradient(to bottom, #000 0 52%, transparent 52% 56%, #000 56% 64%, transparent 64% 69%, #000 69% 76%, transparent 76% 82%, #000 82% 88%, transparent 88% 95%, #000 95%);
+}
 
 /* Pista del menú secreto: el final del código. */
 [data-estilo="vaporwave"] .pista::after { content: 'Ｂ Ａ'; letter-spacing: 0.4em; }
