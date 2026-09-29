@@ -6,7 +6,7 @@ A URL safety scanner. Paste a link, get a verdict before you click it.
 
 **Live at [shield-link.vercel.app](https://shield-link.vercel.app)**
 
-https://github.com/user-attachments/assets/d51cb654-d580-4068-9a76-d4556720805b
+https://github.com/user-attachments/assets/75a1b143-63ca-4819-af09-97137775a961
 
 *22 seconds, built from a real report for `aka.ms/wsl`: the link breaks into its domain, certificate and
 destination, and each finding folds back into the verdict.*
