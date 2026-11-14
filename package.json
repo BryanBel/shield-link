@@ -23,7 +23,7 @@
     "@fontsource/space-grotesk": "^5.3.0",
     "@fontsource/vt323": "^5.3.0",
     "@neondatabase/serverless": "^1.2.0",
-    "astro": "^7.4.4",
+    "astro": "^7.4.7",
     "cookie": "^2.0.1",
     "tldts": "^7.4.19"
   },
