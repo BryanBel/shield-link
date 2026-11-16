@@ -14,7 +14,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@astrojs/vercel": "^11.0.17",
+    "@astrojs/vercel": "^11.0.21",
     "@fontsource/audiowide": "^5.3.0",
     "@fontsource/dm-sans": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
@@ -22,10 +22,10 @@
     "@fontsource/orbitron": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
     "@fontsource/vt323": "^5.3.0",
-    "@neondatabase/serverless": "^1.2.0",
-    "astro": "^7.4.4",
-    "cookie": "^2.0.1",
-    "tldts": "^7.4.19"
+    "@neondatabase/serverless": "^1.2.1",
+    "astro": "^7.4.11",
+    "cookie": "^2.0.2",
+    "tldts": "^7.5.2"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
